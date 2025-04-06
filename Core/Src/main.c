@@ -18,7 +18,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "dma.h"
 #include "tim.h"
 #include "gpio.h"
 
@@ -79,7 +78,6 @@ int main(void)
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
-  ///111111
 
   /* USER CODE BEGIN Init */
 
@@ -94,7 +92,6 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
@@ -112,7 +109,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   // 启动TIM5用于按键扫描(2ms中断)
-//  HAL_TIM_Base_Start_IT(&htim5);
+    HAL_TIM_Base_Start_IT(&htim5);
 //  
 //  HAL_Delay(100);
 //  // 初始化各个模块
@@ -187,33 +184,7 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-/**
- * @brief  定时器中断回调函数
- * @param  htim 定时器句柄
- * @retval None
- */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-    if (htim == &htim5) {
-        Key_Tick(); // 调用按键扫描函数
-    }
-}
-
-/**
- * @brief  DMA传输完成回调函数
- * @param  hdma DMA句柄
- * @retval None
- */
-void HAL_DMA_XferCpltCallback(DMA_HandleTypeDef *hdma) {
-    for(int i=0; i<MOTOR_NUM; i++) {
-        Motor *m = &motors[i];
-        if(m->hdma == hdma && m->state == MOTOR_RUNNING) {
-            // 更新步数计数器
-            m->step_counter += (m->dir == DIR_CW) ? 4 : -4;
-        }
-		break;//找到后立刻退出
-    }
-}
-
+/* 中断回调函数已移至stm32f4xx_it.c文件中统一管理 */
 /* USER CODE END 4 */
 
 /**

@@ -32,7 +32,6 @@ motor_ceu6\stm32f4xx_it.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim
 motor_ceu6\stm32f4xx_it.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 motor_ceu6\stm32f4xx_it.o: ../Core/Inc/tim.h
 motor_ceu6\stm32f4xx_it.o: ../Core/Inc/main.h
-motor_ceu6\stm32f4xx_it.o: ../Core/Inc/dma.h
 motor_ceu6\stm32f4xx_it.o: ../Core/Inc/gpio.h
 motor_ceu6\stm32f4xx_it.o: ../hardware/inc/motor.h
 motor_ceu6\stm32f4xx_it.o: ../hardware/inc/Oled.h

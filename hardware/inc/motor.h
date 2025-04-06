@@ -9,15 +9,15 @@
 
 /*****************************************************
  * 步进电机引脚定义(低电平有效)
- * motor1: TIM2 + DMA1_Stream6
+ * motor1: TIM2
  * motor1_A----PA10  motor1_B----PA11
  * motor1_C----PA12  motor1_D----PA15
  *
- * motor2: TIM3 + DMA1_Stream2 
+ * motor2: TIM3
  * motor2_A----PA0   motor2_B----PA1
  * motor2_C----PA2   motor2_D----PA3
  *
- * motor3: TIM4 + DMA1_Stream7
+ * motor3: TIM4
  * motor3_A----PB3   motor3_B----PB4
  * motor3_C----PB5   motor3_D----PB6
 *****************************************************/
@@ -25,27 +25,23 @@
 /* 基本参数定义 */
 #define MOTOR_NUM           3     // 电机数量
 #define MOTOR_TIMEOUT     1000    // 超时时间(ms)
-#define DMA_ABORT_TIMEOUT  50     // DMA中止超时(ms)
-#define DMA_START_TIMEOUT 100     // DMA启动超时(ms)
 
 /**
- * @brief 电机控制状态枚举
+ * 【状态码枚举】
+ * 定义电机控制操作返回的状态码
  */
 typedef enum {
     MOTOR_OK = 0,                 // 正常
     MOTOR_ERR_INVALID_ID,         // 无效电机ID
-    MOTOR_ERR_DMA_BUSY,           // DMA忙
     MOTOR_ERR_SPEED_RANGE,        // 速度超出范围
-    MOTOR_ERR_DMA_ABORT_TIMEOUT,  // DMA中止超时
-    MOTOR_ERR_DMA_CONFIG,         // DMA配置错误
-    MOTOR_ERR_DMA_START_TIMEOUT,  // DMA启动超时
     MOTOR_ERR_TIM_START,          // 定时器启动错误
     MOTOR_ERR_ALREADY_RUNNING,    // 电机已在运行
     MOTOR_ERR_NOT_RUNNING         // 电机未运行
 } Motor_Status;
 
 /**
- * @brief 电机运行状态
+ * 【运行状态枚举】
+ * 定义电机的当前运行状态
  */
 typedef enum {
     MOTOR_STOP = 0,               // 停止
@@ -54,7 +50,8 @@ typedef enum {
 } Motor_State;
 
 /**
- * @brief 电机旋转方向
+ * 【旋转方向枚举】
+ * 定义电机的旋转方向
  */
 typedef enum {
     DIR_NONE = 0,                 // 无方向
@@ -63,21 +60,24 @@ typedef enum {
 } Motor_Dir;
 
 /**
- * @brief 电机控制结构体
+ * 【电机结构体】
+ * 保存电机的所有配置和状态信息
  */
 typedef struct {
+    /* 基本信息 */
+    uint8_t id;                   // 电机ID (0-2)
+    
     /* 硬件资源 */
     TIM_HandleTypeDef* htim;      // 定时器句柄
-    DMA_HandleTypeDef* hdma;      // DMA句柄
+    DMA_HandleTypeDef* hdma;      // DMA句柄(保留用于兼容性)
     GPIO_TypeDef* gpio_port;      // GPIO端口
     uint16_t pins;                // GPIO引脚掩码
 
     /* 运动参数 */
     Motor_State state;            // 运行状态
     Motor_Dir dir;                // 旋转方向
-    uint32_t phase_buffer[4];     // 相位缓冲区
-    const uint32_t *forward_phases;  // 正向相序表
-    const uint32_t *reverse_phases;  // 反向相序表
+    uint8_t phase_index;          // 当前相位索引 (0-3)
+    const uint32_t *phases;       // 相位表
 
     /* 速度参数 */
     uint32_t max_speed;           // 最大速度(步/秒)
@@ -90,60 +90,36 @@ typedef struct {
 
 extern Motor motors[MOTOR_NUM];
 
-/**
- * 函数声明
- */
-// 初始化
-Motor_Status Motor_InitAll(void);
+/*====================== 函数声明 ======================*/
 
-/**
- * @brief  启动电机
- * @param  id 电机ID(0-2)
- * @retval Motor_Status 操作结果
- */
+/*--------------------- 初始化函数 ---------------------*/
+Motor_Status Motor_InitAll(void); // 初始化所有电机
+
+/*--------------------- 控制函数 ---------------------*/
+// 启动指定ID电机
 Motor_Status Motor_Run(uint8_t id);
 
-/**
- * @brief  停止电机
- * @param  id 电机ID(0-2)
- * @retval Motor_Status 操作结果
- */
+// 停止指定ID电机
 Motor_Status Motor_Stop(uint8_t id);
 
-/**
- * @brief  紧急停止所有电机
- * @retval Motor_Status 操作结果
- */
+// 紧急停止所有电机
 Motor_Status Motor_EmergencyStop(void);
 
-/**
- * @brief  设置电机旋转方向
- * @param  id 电机ID(0-2)
- * @param  dir 旋转方向(DIR_CW/DIR_CCW)
- * @retval Motor_Status 操作结果
- */
+// 设置电机旋转方向(DIR_CW/DIR_CCW)
 Motor_Status Motor_SetDir(uint8_t id, Motor_Dir dir);
 
-/**
- * @brief  设置电机速度
- * @param  id 电机ID(0-2)
- * @param  steps_per_sec 速度(步/秒)
- * @retval Motor_Status 操作结果
- */
+// 设置电机速度(步/秒)
 Motor_Status Motor_SetSpeed(uint8_t id, uint32_t steps_per_sec);
 
-/**
- * @brief  获取电机状态
- * @param  id 电机ID(0-2)
- * @retval Motor_State 电机状态
- */
+/*--------------------- 状态查询函数 ---------------------*/
+// 获取电机运行状态(MOTOR_STOP/MOTOR_RUNNING/MOTOR_ERROR)
 Motor_State Motor_GetState(uint8_t id);
 
-/**
- * @brief  获取电机步数
- * @param  id 电机ID(0-2)
- * @retval uint32_t 步数
- */
+// 获取电机当前步数
 uint32_t Motor_GetStepCount(uint8_t id);
+
+/*--------------------- 内部函数 ---------------------*/
+// 软件触发相位更新(由定时器中断调用)
+void motor_update_phase(Motor *m);
 
 #endif /* __MOTOR_H__ */

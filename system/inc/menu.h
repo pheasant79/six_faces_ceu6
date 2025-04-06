@@ -72,56 +72,38 @@ typedef struct {
 } MenuItem;
 
 /* 函数声明 */
-// 主菜单函数
-int menu1(void);
-int menu_process(void);
-int menu_main(void);
-int menu2(void);
-int menu_settings(void);
-int menu_history(void);
 
-// 工艺控制函数
-int process_start(void);
-int process_stop(void);
-int process_pause(void);
-void process_update(void);
+/* ===== 菜单系统入口函数 ===== */
+int menu1(void);             // 系统主菜单入口，提供三个主选项
+int menu_main(void);         // 向后兼容的主菜单入口点，调用menu1()
 
-// 显示函数
-void display_3d_model(void);
-void display_pressure_bars(void);
-void display_temperature(void);
-void display_progress(void);
-void display_status(void);
-void display_animation_frame(void);
+/* ===== 主菜单页面 ===== */
+int menu_process(void);      // 工艺过程监控界面，显示参数和3D模型
+int menu2(void);             // 参数设置菜单，选择设置参数类型
+int menu_settings(void);     // 系统设置菜单，提供显示/声音等设置
+int menu_history(void);      // 历史记录浏览菜单，查看过去工艺记录
 
-// 交互函数
-void handle_touch_input(void);
-void update_parameters(void);
-void save_history_data(void);
+/* ===== 二级菜单页面 ===== */
+int menu3_PressureSet(void);    // 压力参数设置界面
+int menu3_TemperatureSet(void); // 温度参数设置界面
+int menu3_TimeSet(void);        // 时间参数设置界面
+int menu3_ProcessSelect(void);  // 工艺选择界面，选择预设工艺方案
+int menu3_DataRecord(void);     // 数据记录界面，查看和导出数据
+int menu3_SystemConfig(void);   // 系统配置界面，传感器校准和系统设置
+int menu_motor_status(void);    // 电机状态监控界面，三轴电机参数控制
 
-// 动画效果
-void animate_transformation(void);
-void show_warning_effect(void);
-void update_particle_effects(void);
+/* ===== 三级菜单页面 ===== */
+int menu4_Process1(void);       // 工艺1参数设置
+int menu4_Process2(void);       // 工艺2参数设置
+int menu4_Process3(void);       // 工艺3参数设置
+int menu4_CalibrationP(void);   // 压力传感器校准
+int menu4_CalibrationT(void);   // 温度传感器校准
+int menu4_AlarmConfig(void);    // 警报配置，设置警报阈值
+int menu4_SystemInfo(void);     // 系统信息，显示版本和硬件信息
 
-// 系统功能
-void update_system_state(void);
-void toggle_night_mode(void);
-
-// 菜单处理函数
-int menu3_PressureSet(void);
-int menu3_TemperatureSet(void);
-int menu3_TimeSet(void);
-int menu3_ProcessSelect(void);
-int menu3_DataRecord(void);
-int menu3_SystemConfig(void);
-int menu4_Process1(void);
-int menu4_Process2(void);
-int menu4_Process3(void);
-int menu4_CalibrationP(void);
-int menu4_CalibrationT(void);
-int menu4_AlarmConfig(void);
-int menu4_SystemInfo(void);
-int menu_motor_status(void);
+/* ===== 工艺控制函数 ===== */
+int process_start(void);      // 启动工艺过程
+int process_stop(void);       // 停止工艺过程
+int process_pause(void);      // 暂停工艺过程
 
 #endif /* __MENU_H__ */

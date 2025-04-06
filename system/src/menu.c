@@ -17,6 +17,33 @@ static uint8_t KeyNum;                    // 按键值存储
 static SystemParams g_sys_params = {0};   // 系统参数
 static ProcessParams g_process_params = {0};     // 工艺参数
 
+/* ===== 内部函数声明 ===== */
+// 显示函数
+static void display_3d_model(void);         // 显示3D立方体模型
+static void display_pressure_bars(void);    // 显示六面压力条形图
+static void display_temperature(void);      // 显示温度计和温度值
+static void display_progress(void);         // 显示进度条和百分比
+static void display_status_bar(void);       // 显示系统状态栏
+static void display_animation_frame(void);  // 显示动画帧
+static void display_menu_items(const MenuItem *items, uint8_t count, uint8_t select); // 显示菜单项
+static void display_value_with_animation(float value, uint8_t x, uint8_t y); // 带动画效果显示数值
+
+// 交互与数据处理函数
+static void handle_touch_input(void);    // 处理触摸屏输入
+static void update_parameters(void);     // 更新系统参数
+static void save_history_data(void);     // 保存历史数据
+static void process_update(void);        // 更新工艺参数
+
+// 特效函数
+static void animate_transformation(void);  // 石墨转化过程动画
+static void show_warning_effect(void);     // 警告状态闪烁效果
+static void update_particle_effects(void); // 粒子效果动画
+static void init_particles(void);          // 初始化粒子效果
+
+// 系统功能函数
+static void update_system_state(void);     // 更新系统状态，检查警报条件
+static void toggle_night_mode(void);       // 切换夜间/正常显示模式
+
 /* 主菜单项定义 */
 static const MenuItem main_menu_items[] = {
     {"Pressure Set", menu3_PressureSet},
@@ -71,7 +98,7 @@ static void display_menu_items(const MenuItem *items, uint8_t count, uint8_t sel
 /**
  * @brief 更新系统状态
  */
-void update_system_state(void) {
+static void update_system_state(void) {
     static uint32_t last_check = 0;
     uint32_t current_time = HAL_GetTick();
     
@@ -100,7 +127,7 @@ void update_system_state(void) {
 /**
  * @brief 显示状态栏
  */
-void display_status_bar(void) {
+static void display_status_bar(void) {
     char status_text[16];
     const char *state_str[] = {"IDLE", "HEAT", "PRESS", "HOLD", "ERR"};
     
@@ -118,7 +145,7 @@ void display_status_bar(void) {
 /**
  * @brief 带动画效果显示数值
  */
-void display_value_with_animation(float value, uint8_t x, uint8_t y) {
+static void display_value_with_animation(float value, uint8_t x, uint8_t y) {
     static uint8_t animation_step = 0;
     char value_str[16];
     
@@ -146,7 +173,7 @@ static void init_particles(void) {
 /**
  * @brief 更新粒子效果
  */
-void update_particle_effects(void) {
+static void update_particle_effects(void) {
     static uint32_t last_particle = 0;
     uint32_t current_time = HAL_GetTick();
     
@@ -185,7 +212,7 @@ void update_particle_effects(void) {
 /**
  * @brief 绘制3D模型
  */
-void display_3d_model(void) {
+static void display_3d_model(void) {
     // 定义立方体顶点（移到函数内部，因为只在这里使用）
     const Vertex cube_vertices[] = {
         {-10, -10, -10, 0}, {10, -10, -10, 0},
@@ -205,7 +232,7 @@ void display_3d_model(void) {
 /**
  * @brief 显示压力条形图
  */
-void display_pressure_bars(void) {
+static void display_pressure_bars(void) {
     int i;
     char buf[32];
     for(i = 0; i < 6; i++) {
@@ -224,7 +251,7 @@ void display_pressure_bars(void) {
 /**
  * @brief 显示温度计
  */
-void display_temperature(void) {
+static void display_temperature(void) {
     const uint8_t x = SCREEN_WIDTH - 20;
     const uint8_t y = 10;
     const uint8_t height = 40;
@@ -248,7 +275,7 @@ void display_temperature(void) {
 /**
  * @brief 显示进度条
  */
-void display_progress(void) {
+static void display_progress(void) {
     const uint8_t progress_width = 100;
     const uint8_t y = SCREEN_HEIGHT - 10;
     
@@ -582,12 +609,13 @@ int menu3_TimeSet(void)
  */
 int menu3_ProcessSelect(void)
 {
-    static const char *process_names[] = {
-        "Process 1",
-        "Process 2",
-        "Process 3"
-    };
     uint8_t select = 0;
+    static const MenuItem process_items[] = {
+        {"Process 1", menu4_Process1},
+        {"Process 2", menu4_Process2},
+        {"Process 3", menu4_Process3},
+        {"Custom", NULL}
+    };
     
     while(1)
     {
@@ -596,18 +624,16 @@ int menu3_ProcessSelect(void)
         switch(KeyNum)
         {
             case 1: // 上
-                select = (select > 0) ? (select - 1) : 2;
+                select = (select > 0) ? (select - 1) : 3;
                 break;
                 
             case 2: // 下
-                select = (select < 2) ? (select + 1) : 0;
+                select = (select < 3) ? (select + 1) : 0;
                 break;
                 
             case 3: // 确认
-                switch(select) {
-                    case 0: return menu4_Process1();
-                    case 1: return menu4_Process2();
-                    case 2: return menu4_Process3();
+                if(process_items[select].handler != NULL) {
+                    return process_items[select].handler();
                 }
                 break;
                 
@@ -615,15 +641,7 @@ int menu3_ProcessSelect(void)
                 return menu2();
         }
         
-        OLED_Clear();
-        OLED_ShowString(0, 0, "Select Process:", OLED_8X16);
-        for(uint8_t i = 0; i < 3; i++) {
-            OLED_ShowString(0, (i+1)*16, (char*)process_names[i], OLED_8X16);
-            if(i == select) {
-                OLED_ShowString(120, (i+1)*16, ">", OLED_8X16);
-            }
-        }
-        OLED_Update();
+        display_menu_items(process_items, 4, select);
     }
 }
 
@@ -652,13 +670,13 @@ int menu3_DataRecord(void)
  */
 int menu3_SystemConfig(void)
 {
+    uint8_t select = 0;
     static const MenuItem config_items[] = {
         {"Pressure Cal", menu4_CalibrationP},
-        {"Temperature Cal", menu4_CalibrationT},
+        {"Temp Cal", menu4_CalibrationT},
         {"Alarm Config", menu4_AlarmConfig},
         {"System Info", menu4_SystemInfo}
     };
-    uint8_t select = 0;
     
     while(1)
     {
@@ -675,7 +693,10 @@ int menu3_SystemConfig(void)
                 break;
                 
             case 3: // 确认
-                return config_items[select].handler();
+                if(config_items[select].handler != NULL) {
+                    return config_items[select].handler();
+                }
+                break;
                 
             case 4: // 返回
                 return menu2();
@@ -786,133 +807,10 @@ int menu4_CalibrationT(void)
  */
 int menu4_AlarmConfig(void)
 {
-    typedef struct {
-        float pressure_warning;    // 压力警告阈值
-        float pressure_critical;   // 压力危险阈值
-        float temp_warning;        // 温度警告阈值
-        float temp_critical;       // 温度危险阈值
-    } AlarmThresholds;
-    
-    static AlarmThresholds thresholds = {
-        .pressure_warning = 8.0f,
-        .pressure_critical = 9.5f,
-        .temp_warning = 150.0f,
-        .temp_critical = 180.0f
-    };
-    
-    uint8_t select = 0;  // 0-3: 压力警告、压力危险、温度警告、温度危险
-    uint8_t edit_mode = 0;
-    float *current_value = &thresholds.pressure_warning;
-    
+    // 报警设置界面待实现
     OLED_Clear();
-    
-    while(1)
-    {
-        KeyNum = Key_GetNum();
-        
-        if(!edit_mode) {
-            switch(KeyNum)
-            {
-                case 1: // 上
-                    select = (select > 0) ? (select - 1) : 3;
-                    switch(select) {
-                        case 0: current_value = &thresholds.pressure_warning; break;
-                        case 1: current_value = &thresholds.pressure_critical; break;
-                        case 2: current_value = &thresholds.temp_warning; break;
-                        case 3: current_value = &thresholds.temp_critical; break;
-                    }
-                    break;
-                    
-                case 2: // 下
-                    select = (select < 3) ? (select + 1) : 0;
-                    switch(select) {
-                        case 0: current_value = &thresholds.pressure_warning; break;
-                        case 1: current_value = &thresholds.pressure_critical; break;
-                        case 2: current_value = &thresholds.temp_warning; break;
-                        case 3: current_value = &thresholds.temp_critical; break;
-                    }
-                    break;
-                    
-                case 3: // 进入编辑模式
-                    edit_mode = 1;
-                    break;
-                    
-                case 4: // 返回
-                    return menu3_SystemConfig();
-            }
-        } else {
-            switch(KeyNum)
-            {
-                case 1: // 增加
-                    if(select < 2) { // 压力设置
-                        *current_value += 0.5f;
-                    } else { // 温度设置
-                        *current_value += 5.0f;
-                    }
-                    break;
-                    
-                case 2: // 减小
-                    if(select < 2) { // 压力设置
-                        *current_value -= 0.5f;
-                    } else { // 温度设置
-                        *current_value -= 5.0f;
-                    }
-                    break;
-                    
-                case 3: // 确认
-                    edit_mode = 0;
-                    break;
-                    
-                case 4: // 取消
-                    edit_mode = 0;
-                    break;
-            }
-            
-            // 确保警告阈值小于危险阈值
-            if(thresholds.pressure_warning >= thresholds.pressure_critical) {
-                thresholds.pressure_warning = thresholds.pressure_critical - 0.5f;
-            }
-            if(thresholds.temp_warning >= thresholds.temp_critical) {
-                thresholds.temp_warning = thresholds.temp_critical - 5.0f;
-            }
-        }
-        
-        // 显示界面
-        OLED_Clear();
-        OLED_ShowString(0, 0, "Alarm Config", OLED_8X16);
-        
-        // 显示压力警告阈值
-        OLED_ShowString(0, 16, "P-Warn:", OLED_8X16);
-        OLED_Printf(64, 16, OLED_8X16, "%.1f", thresholds.pressure_warning);
-        if(select == 0 && edit_mode) OLED_ShowString(120, 16, "*", OLED_8X16);
-        else if(select == 0) OLED_ShowString(120, 16, ">", OLED_8X16);
-        
-        // 显示压力危险阈值
-        OLED_ShowString(0, 32, "P-Crit:", OLED_8X16);
-        OLED_Printf(64, 32, OLED_8X16, "%.1f", thresholds.pressure_critical);
-        if(select == 1 && edit_mode) OLED_ShowString(120, 32, "*", OLED_8X16);
-        else if(select == 1) OLED_ShowString(120, 32, ">", OLED_8X16);
-        
-        // 显示温度警告阈值
-        OLED_ShowString(0, 48, "T-Warn:", OLED_8X16);
-        OLED_Printf(64, 48, OLED_8X16, "%.0f", thresholds.temp_warning);
-        if(select == 2 && edit_mode) OLED_ShowString(120, 48, "*", OLED_8X16);
-        else if(select == 2) OLED_ShowString(120, 48, ">", OLED_8X16);
-        
-        OLED_Update();
-    }
-}
-
-/**
- * @brief  系统信息界面
- * @retval int 返回值说明
- */
-int menu4_SystemInfo(void)
-{
-    OLED_Clear();
-    OLED_ShowString(0, 0, "System Info", OLED_8X16);
-    OLED_ShowString(0, 16, "Ver: 1.0.0", OLED_8X16);
-    OLED_ShowString(0, 32, "Build: 2024", OLED_8X16);
+    OLED_ShowString(0, 0, "Alarm Config", OLED_8X16);
+    OLED_ShowString(0, 16, "Not Implemented", OLED_8X16);
     OLED_Update();
     
     while(1)
@@ -923,9 +821,31 @@ int menu4_SystemInfo(void)
 }
 
 /**
+ * @brief  系统信息界面
+ * @retval int 返回值说明
+ */
+int menu4_SystemInfo(void)
+{
+    // 系统信息
+    OLED_Clear();
+    OLED_ShowString(0, 0, "System Info", OLED_8X16);
+    OLED_ShowString(0, 16, "HW: v1.0", OLED_8X16);
+    OLED_ShowString(0, 32, "SW: v1.2", OLED_8X16);
+    OLED_ShowString(0, 48, "SN: 2023112301", OLED_8X16);
+    OLED_Update();
+    
+    while(1)
+    {
+        KeyNum = Key_GetNum();
+        if(KeyNum == 4) 
+            return menu3_SystemConfig();
+    }
+}
+
+/**
  * @brief 切换夜间模式
  */
-void toggle_night_mode(void) {
+static void toggle_night_mode(void) {
     g_sys_params.mode = (g_sys_params.mode == DISPLAY_MODE_NIGHT) ? 
                         DISPLAY_MODE_NORMAL : DISPLAY_MODE_NIGHT;
     
@@ -1068,5 +988,60 @@ int menu_motor_status(void)
         else if(select == 5) OLED_ShowString(120, 48, ">", OLED_8X16);
         
         OLED_Update();
+    }
+}
+
+/**
+ * @brief  主菜单界面 - 老接口，保持兼容性
+ * @retval int 返回值说明
+ */
+int menu_main(void)
+{
+    // 为兼容保留，实际调用menu1
+    return menu1();
+}
+
+/**
+ * @brief  历史记录菜单界面
+ * @retval int 返回值说明
+ */
+int menu_history(void)
+{
+    uint8_t select = 0;
+    static const MenuItem history_items[] = {
+        {"Record 1", NULL},
+        {"Record 2", NULL},
+        {"Record 3", NULL},
+        {"Export Data", NULL}
+    };
+    
+    while(1)
+    {
+        KeyNum = Key_GetNum();
+        
+        switch(KeyNum)
+        {
+            case 1: // 上
+                select = (select > 0) ? (select - 1) : 3;
+                break;
+                
+            case 2: // 下
+                select = (select < 3) ? (select + 1) : 0;
+                break;
+                
+            case 3: // 确认
+                // 历史记录功能暂未实现
+                OLED_Clear();
+                OLED_ShowString(0, 0, "History", OLED_8X16);
+                OLED_ShowString(0, 16, "Not Implemented", OLED_8X16);
+                OLED_Update();
+                HAL_Delay(1000);
+                break;
+                
+            case 4: // 返回
+                return menu1();
+        }
+        
+        display_menu_items(history_items, 4, select);
     }
 }

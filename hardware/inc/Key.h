@@ -16,12 +16,18 @@ typedef struct {
     uint16_t GPIO_Pin;
 } Key_GPIO;
 
-/**
- * @brief  按键初始化
- * @retval None
- */
-void Key_Init(void);              // 按键初始化
-uint8_t Key_GetNum(void);         // 获取按键编号
-void Key_Tick(void);              // 2ms定时器回调
+/*====================== 函数声明 ======================*/
+
+/*--------------------- 初始化函数 ---------------------*/
+// 按键初始化
+void Key_Init(void);
+
+/*--------------------- 状态查询函数 ---------------------*/
+// 获取当前按下的按键编号
+uint8_t Key_GetNum(void);
+
+/*--------------------- 内部函数 ---------------------*/
+// 2ms定时器中断回调处理函数
+void Key_Tick(void);
 
 #endif /* __KEY_H */

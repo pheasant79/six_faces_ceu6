@@ -32,7 +32,7 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "tim.h"
-#include "dma.h"
+// #include "dma.h" // 已改为软件触发，不再需要DMA头文件
 #include "gpio.h"
 #include "motor.h"
 #include "Oled.h"

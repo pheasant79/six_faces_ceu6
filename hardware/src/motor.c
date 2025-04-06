@@ -5,67 +5,44 @@
 #include "motor.h"
 #include <string.h>
 
-/* 计算DMA传输完成标志 */
-// 根据DMA实例和流号判断标志位位置
-#define MOTOR_DMA_TC_FLAG(hdma)  __HAL_DMA_GET_TC_FLAG_INDEX(hdma)
+/* 虚拟DMA句柄 - 用于编译通过，但实际不使用 */
+DMA_HandleTypeDef hdma_tim2_ch3_up;
+DMA_HandleTypeDef hdma_tim3_ch4_up;
+DMA_HandleTypeDef hdma_tim4_up;
 
 /* 静态函数声明 */
 static void gpio_reset_pins(Motor *m);
 static Motor_Status validate_motor_id(uint8_t motor_id);
-static Motor_Status motor_dma_abort(Motor *m);
-static Motor_Status motor_dma_start(Motor *m);
+static Motor_Status motor_start(Motor *m);
 
 /* 相位表定义 - 使用BSRR寄存器实现原子操作
  * 高16位写1清零对应引脚,低16位写1置位对应引脚
  */
-static const uint32_t Motor_PhaseTables[3][2][4] = {
-    [0] = { // Motor1
-        { // 顺时针相序
-            Motor1_A_Pin | ((uint32_t)Motor1_B_Pin|Motor1_C_Pin|Motor1_D_Pin)<<16,
-            Motor1_B_Pin | ((uint32_t)Motor1_A_Pin|Motor1_C_Pin|Motor1_D_Pin)<<16,
-            Motor1_C_Pin | ((uint32_t)Motor1_A_Pin|Motor1_B_Pin|Motor1_D_Pin)<<16,
-            Motor1_D_Pin | ((uint32_t)Motor1_A_Pin|Motor1_B_Pin|Motor1_C_Pin)<<16
-        },
-        { // 逆时针相序
-            Motor1_D_Pin | ((uint32_t)Motor1_A_Pin|Motor1_B_Pin|Motor1_C_Pin)<<16,
-            Motor1_C_Pin | ((uint32_t)Motor1_A_Pin|Motor1_B_Pin|Motor1_D_Pin)<<16,
-            Motor1_B_Pin | ((uint32_t)Motor1_A_Pin|Motor1_C_Pin|Motor1_D_Pin)<<16,
-            Motor1_A_Pin | ((uint32_t)Motor1_B_Pin|Motor1_C_Pin|Motor1_D_Pin)<<16
-        }
+static const uint32_t Motor_PhaseTables[3][4] = {
+    [0] = { // Motor1相序
+        Motor1_A_Pin | ((uint32_t)Motor1_B_Pin|Motor1_C_Pin|Motor1_D_Pin)<<16,
+        Motor1_B_Pin | ((uint32_t)Motor1_A_Pin|Motor1_C_Pin|Motor1_D_Pin)<<16,
+        Motor1_C_Pin | ((uint32_t)Motor1_A_Pin|Motor1_B_Pin|Motor1_D_Pin)<<16,
+        Motor1_D_Pin | ((uint32_t)Motor1_A_Pin|Motor1_B_Pin|Motor1_C_Pin)<<16
     },
-    [1] = { // Motor2
-        { // 顺时针相序
-            Motor2_A_Pin | ((uint32_t)Motor2_B_Pin|Motor2_C_Pin|Motor2_D_Pin)<<16,
-            Motor2_B_Pin | ((uint32_t)Motor2_A_Pin|Motor2_C_Pin|Motor2_D_Pin)<<16,
-            Motor2_C_Pin | ((uint32_t)Motor2_A_Pin|Motor2_B_Pin|Motor2_D_Pin)<<16,
-            Motor2_D_Pin | ((uint32_t)Motor2_A_Pin|Motor2_B_Pin|Motor2_C_Pin)<<16
-        },                                                          
-        { // 逆时针相序                                            
-            Motor2_D_Pin | ((uint32_t)Motor2_A_Pin|Motor2_B_Pin|Motor2_C_Pin)<<16,
-            Motor2_C_Pin | ((uint32_t)Motor2_A_Pin|Motor2_B_Pin|Motor2_D_Pin)<<16,
-            Motor2_B_Pin | ((uint32_t)Motor2_A_Pin|Motor2_C_Pin|Motor2_D_Pin)<<16,
-            Motor2_A_Pin | ((uint32_t)Motor2_B_Pin|Motor2_C_Pin|Motor2_D_Pin)<<16
-        }
+    [1] = { // Motor2相序                                             
+        Motor2_A_Pin | ((uint32_t)Motor2_B_Pin|Motor2_C_Pin|Motor2_D_Pin)<<16,
+        Motor2_B_Pin | ((uint32_t)Motor2_A_Pin|Motor2_C_Pin|Motor2_D_Pin)<<16,
+        Motor2_C_Pin | ((uint32_t)Motor2_A_Pin|Motor2_B_Pin|Motor2_D_Pin)<<16,
+        Motor2_D_Pin | ((uint32_t)Motor2_A_Pin|Motor2_B_Pin|Motor2_C_Pin)<<16
     },
-    [2] = { // Motor3
-        { // 顺时针相序
-            Motor3_A_Pin | ((uint32_t)Motor3_B_Pin|Motor3_C_Pin|Motor3_D_Pin)<<16,
-            Motor3_B_Pin | ((uint32_t)Motor3_A_Pin|Motor3_C_Pin|Motor3_D_Pin)<<16,
-            Motor3_C_Pin | ((uint32_t)Motor3_A_Pin|Motor3_B_Pin|Motor3_D_Pin)<<16,
-            Motor3_D_Pin | ((uint32_t)Motor3_A_Pin|Motor3_B_Pin|Motor3_C_Pin)<<16
-        },                                 
-        { // 逆时针相序                  
-            Motor3_D_Pin | ((uint32_t)Motor3_A_Pin|Motor3_B_Pin|Motor3_C_Pin)<<16,
-            Motor3_C_Pin | ((uint32_t)Motor3_A_Pin|Motor3_B_Pin|Motor3_D_Pin)<<16,
-            Motor3_B_Pin | ((uint32_t)Motor3_A_Pin|Motor3_C_Pin|Motor3_D_Pin)<<16,
-            Motor3_A_Pin | ((uint32_t)Motor3_B_Pin|Motor3_C_Pin|Motor3_D_Pin)<<16
-        }
+    [2] = { // Motor3相序
+        Motor3_A_Pin | ((uint32_t)Motor3_B_Pin|Motor3_C_Pin|Motor3_D_Pin)<<16,
+        Motor3_B_Pin | ((uint32_t)Motor3_A_Pin|Motor3_C_Pin|Motor3_D_Pin)<<16,
+        Motor3_C_Pin | ((uint32_t)Motor3_A_Pin|Motor3_B_Pin|Motor3_D_Pin)<<16,
+        Motor3_D_Pin | ((uint32_t)Motor3_A_Pin|Motor3_B_Pin|Motor3_C_Pin)<<16
     }
 };
 
 /* 电机实例定义 */
 Motor motors[MOTOR_NUM] = {
     [0] = {
+        .id = 0,
         .htim = &htim2,
         .hdma = &hdma_tim2_ch3_up,
         .gpio_port = Motor1_A_GPIO_Port,
@@ -73,14 +50,14 @@ Motor motors[MOTOR_NUM] = {
 
         .state = MOTOR_STOP,
         .dir = DIR_NONE,
-        .phase_buffer = {0},
-        .forward_phases = Motor_PhaseTables[0][0],
-        .reverse_phases = Motor_PhaseTables[0][1],
+        .phase_index = 0,
+        .phases = Motor_PhaseTables[0],
 
         .max_speed = 1000,
         .min_speed = 10
     },
     [1] = {
+        .id = 1,
         .htim = &htim3,
         .hdma = &hdma_tim3_ch4_up,
         .gpio_port = Motor2_A_GPIO_Port,
@@ -88,14 +65,14 @@ Motor motors[MOTOR_NUM] = {
         
         .state = MOTOR_STOP,
         .dir = DIR_NONE,
-        .phase_buffer = {0},
-        .forward_phases = Motor_PhaseTables[1][0],
-        .reverse_phases = Motor_PhaseTables[1][1],
+        .phase_index = 0,
+        .phases = Motor_PhaseTables[1],
         
         .max_speed = 1000,
         .min_speed = 10
     },
     [2] = {
+        .id = 2,
         .htim = &htim4,
         .hdma = &hdma_tim4_up,
         .gpio_port = Motor3_A_GPIO_Port,
@@ -103,9 +80,8 @@ Motor motors[MOTOR_NUM] = {
         
         .state = MOTOR_STOP,
         .dir = DIR_NONE,
-        .phase_buffer = {0},
-        .forward_phases = Motor_PhaseTables[2][0], 
-        .reverse_phases = Motor_PhaseTables[2][1],
+        .phase_index = 0,
+        .phases = Motor_PhaseTables[2],
         
         .max_speed = 1000,
         .min_speed = 10
@@ -131,98 +107,48 @@ static Motor_Status validate_motor_id(uint8_t motor_id) {
 }
 
 /**
- * @brief  安全中止DMA传输
+ * @brief  启动电机
  * @param  m 电机实例指针
  * @retval Motor_Status 状态码
- * @note   中止DMA传输但保留当前相位位置,以便重新启动时能够从正确的相位继续
  */
-static Motor_Status motor_dma_abort(Motor *m) {
-    if(m->state != MOTOR_RUNNING) return MOTOR_OK;
+static Motor_Status motor_start(Motor *m) {
+    if(m->state == MOTOR_RUNNING) return MOTOR_ERR_ALREADY_RUNNING;
 
-    // 1. 获取当前相位位置
-    uint32_t transferred = 4 - __HAL_DMA_GET_COUNTER(m->hdma);
-    uint8_t current_phase = transferred % 4;
-
-    // 2. 禁用TIM的DMA请求
-    __HAL_TIM_DISABLE_DMA(m->htim, TIM_DMA_UPDATE);
-
-    // 3. 等待当前传输完成
-    uint32_t tc_flag = MOTOR_DMA_TC_FLAG(m->hdma);
-    uint32_t start = HAL_GetTick();
-    while(!__HAL_DMA_GET_FLAG(m->hdma, tc_flag)) {
-        if(HAL_GetTick() - start > DMA_ABORT_TIMEOUT) {
-            m->state = MOTOR_ERROR;
-            __HAL_DMA_CLEAR_FLAG(m->hdma, tc_flag);
-            HAL_DMA_Abort(m->hdma);
-            return MOTOR_ERR_DMA_ABORT_TIMEOUT;
-        }
+    // 1. 配置定时器
+    __HAL_TIM_SET_COUNTER(m->htim, 0);
+    
+    // 2. 启动定时器中断
+    if(HAL_TIM_Base_Start_IT(m->htim) != HAL_OK) {
+        return MOTOR_ERR_TIM_START;
     }
 
-    // 4. 清除标志位
-    __HAL_DMA_CLEAR_FLAG(m->hdma, tc_flag);
-
-    // 5. 中止DMA传输
-    if(HAL_DMA_Abort(m->hdma) != HAL_OK) {
-        m->state = MOTOR_ERROR;
-        return MOTOR_ERR_DMA_BUSY;
-    }
-
-    // 6. 保持最后的有效相位
-    uint32_t last_phase = m->phase_buffer[current_phase];
-    m->gpio_port->BSRR = last_phase;
-
-    // 7. 重新排列相位缓冲区,使下次启动时从当前相位继续
-    uint32_t temp[4];
-    for(int i=0; i<4; i++) {
-        temp[i] = m->phase_buffer[(current_phase + i) % 4];
-    }
-    memcpy(m->phase_buffer, temp, sizeof(temp));
-
-    // 注意:不改变电机状态,由调用者决定是否设置为MOTOR_STOP
+    m->state = MOTOR_RUNNING; // 设置为运行状态
     return MOTOR_OK;
 }
 
 /**
- * @brief  启动DMA传输
+ * @brief  软件触发相位更新
  * @param  m 电机实例指针
- * @retval Motor_Status 状态码
+ * @retval None
  */
-static Motor_Status motor_dma_start(Motor *m) {
-    if(m->state == MOTOR_RUNNING) return MOTOR_ERR_ALREADY_RUNNING;
-
-    // 1. 配置DMA
-    m->hdma->Instance->CR &= ~DMA_SxCR_EN;
-    m->hdma->Init.Mode = DMA_CIRCULAR;
-    m->hdma->Init.Direction = DMA_MEMORY_TO_PERIPH;
-    m->hdma->Init.PeriphInc = DMA_PINC_DISABLE;
-    m->hdma->Init.MemInc = DMA_MINC_ENABLE;
-    m->hdma->Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-    m->hdma->Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
-
-    if(HAL_DMA_Init(m->hdma) != HAL_OK) {
-        m->state = MOTOR_ERROR;
-        return MOTOR_ERR_DMA_CONFIG;
+void motor_update_phase(Motor *m) {
+    if(m->state != MOTOR_RUNNING) return;
+    
+    // 直接将当前相位写入BSRR寄存器
+    m->gpio_port->BSRR = m->phases[m->phase_index];
+    
+    // 根据方向更新相位索引和步数计数器
+    if (m->dir == DIR_CW) {
+        // 正转：索引递增
+        m->phase_index = (m->phase_index + 1) % 4;
+        // 每次相位变化都更新步数，增加1步
+        m->step_counter++;
+    } else {
+        // 反转：索引递减（+3 等价于 -1，但避免负数）
+        m->phase_index = (m->phase_index + 3) % 4;
+        // 每次相位变化都更新步数，减少1步
+        m->step_counter--;
     }
-
-    // 2. 启动DMA传输
-    if(HAL_DMA_Start_IT(m->hdma, (uint32_t)m->phase_buffer, 
-        (uint32_t)&m->gpio_port->BSRR, 4) != HAL_OK) {
-        m->state = MOTOR_ERROR;
-        return MOTOR_ERR_DMA_BUSY;
-    }
-
-    // 3. 配置定时器
-    __HAL_TIM_SET_COUNTER(m->htim, 0);
-    __HAL_TIM_ENABLE_DMA(m->htim, TIM_DMA_UPDATE);
-
-    // 4. 启动定时器
-    if(HAL_TIM_Base_Start(m->htim) != HAL_OK) {
-        motor_dma_abort(m);
-        return MOTOR_ERR_TIM_START;
-    }
-
-    m->state = MOTOR_RUNNING; // 直接设置为运行状态
-    return MOTOR_OK;
 }
 
 /**
@@ -233,11 +159,14 @@ Motor_Status Motor_InitAll(void) {
     for(int i=0; i<MOTOR_NUM; i++) {
         Motor *m = &motors[i];
         
+        // 确保ID和数组索引一致
+        m->id = i;
+        
         // 初始化GPIO
         gpio_reset_pins(m);
-        memcpy(m->phase_buffer, m->forward_phases, sizeof(m->phase_buffer));
         m->state = MOTOR_STOP;
         m->dir = DIR_NONE;
+        m->phase_index = 0;
         m->step_counter = 0;
     }
     return MOTOR_OK;
@@ -261,12 +190,11 @@ Motor_Status Motor_Run(uint8_t id) {
     
     // 如果没有设置方向,默认使用顺时针
     if(m->dir == DIR_NONE) {
-        memcpy(m->phase_buffer, m->forward_phases, sizeof(m->phase_buffer));
         m->dir = DIR_CW;
     }
     
-    // 启动DMA传输,motor_dma_start内部会设置状态为MOTOR_RUNNING
-    return motor_dma_start(m);
+    // 启动电机,motor_start内部会设置状态为MOTOR_RUNNING
+    return motor_start(m);
 }
 
 /**
@@ -289,11 +217,11 @@ Motor_Status Motor_Stop(uint8_t id) {
     if(m->state != MOTOR_RUNNING) 
         return MOTOR_OK;
     
-    // 中止DMA传输并保留当前相位位置
-    status = motor_dma_abort(m);
-    if(status != MOTOR_OK) {
-        return status;
-    }
+    // 停止定时器中断
+    HAL_TIM_Base_Stop_IT(m->htim);
+    
+    // 重置引脚状态
+    gpio_reset_pins(m);
     
     // 设置电机状态为停止
     m->state = MOTOR_STOP;
@@ -333,43 +261,10 @@ Motor_Status Motor_SetDir(uint8_t id, Motor_Dir dir) {
     if(m->dir == dir) 
         return MOTOR_OK; // 方向相同,无需改变
     
-    if(m->state == MOTOR_RUNNING) {
-        // 运行状态下改变方向
-        if((status = motor_dma_abort(m)) != MOTOR_OK) 
-            return status;
-        
-        // 获取当前相位位置,确保平滑过渡
-        // 注意:motor_dma_abort已经重新排列了相位缓冲区,
-        // 所以这里直接使用新的相位表即可
-        
-        // 根据新方向重新设置相位,保持当前位置不变
-        if(dir == DIR_CCW) {
-            uint32_t temp[4];
-            const uint32_t *src = m->reverse_phases;
-            for(int i=0; i<4; i++) {
-                temp[i] = src[i];
-            }
-            memcpy(m->phase_buffer, temp, sizeof(temp));
-        } else {
-            uint32_t temp[4];
-            const uint32_t *src = m->forward_phases;
-            for(int i=0; i<4; i++) {
-                temp[i] = src[i];
-            }
-            memcpy(m->phase_buffer, temp, sizeof(temp));
-        }
-        
-        m->dir = dir;
-        
-        // 重新启动DMA传输
-        return motor_dma_start(m);
-    } else {
-        // 停止状态下直接设置方向
-        m->dir = dir;
-        const uint32_t *src = (dir == DIR_CW) ? m->forward_phases : m->reverse_phases;
-        memcpy(m->phase_buffer, src, sizeof(m->phase_buffer));
-        return MOTOR_OK;
-    }
+    // 设置新方向
+    m->dir = dir;
+    
+    return MOTOR_OK;
 }
 
 /**
