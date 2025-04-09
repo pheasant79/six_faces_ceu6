@@ -432,17 +432,6 @@
 
 <div class="section-divider"></div>
 
-<a id="联系方式"></a>
-## 12. 联系方式
-
-如有任何问题或需要技术支持，请联系：
-
-**技术支持热线**：400-123-4567  
-**客服邮箱**：support@graphite-system.com  
-**公司网址**：www.graphite-system.com
-
-工作时间：周一至周五 9:00-17:30
-
 <div class="note">
 产品版本：V2.5.1  
 手册更新日期：2023年10月15日

@@ -324,3 +324,57 @@ motor3 (TIM4 + DMA1_Stream7)
 - 文档：[在线文档链接]
 - 反馈：[问题反馈链接]
 - 维护：[维护指南链接] 
+
+## 菜单系统使用说明
+
+### 在main.c中使用菜单系统
+
+1. 初始化菜单系统
+```c
+#include "menu.h"
+
+int main(void)
+{
+    // 系统初始化
+    System_Init();
+    
+    // 初始化菜单系统
+    Menu_Init();
+    
+    // 进入主菜单
+    menu_main();
+    
+    while(1)
+    {
+        // 主循环
+    }
+}
+```
+
+2. 菜单系统功能说明
+- `menu_main()`: 进入主菜单界面
+- `menu1()`: 显示主菜单选项
+- `menu2()`: 显示参数设置菜单
+- `menu3_*()`: 各种参数设置子菜单
+- `menu4_*()`: 系统配置子菜单
+
+3. 菜单操作说明
+- 按键1: 向上选择
+- 按键2: 向下选择
+- 按键3: 确认/进入
+- 按键4: 返回/退出
+
+4. 菜单功能列表
+- 压力设置 (menu3_PressureSet)
+- 温度设置 (menu3_TemperatureSet)
+- 时间设置 (menu3_TimeSet)
+- 工艺选择 (menu3_ProcessSelect)
+- 数据记录 (menu3_DataRecord)
+- 系统配置 (menu3_SystemConfig)
+- 电机状态 (menu_motor_status)
+
+5. 注意事项
+- 使用菜单系统前需要确保按键和OLED显示已正确初始化
+- 菜单系统会占用部分RAM和Flash空间
+- 建议在系统空闲时调用菜单系统
+- 菜单操作会暂时阻塞主循环，建议在非关键任务时使用 

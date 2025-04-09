@@ -7,10 +7,19 @@
 #include "key.h"
 #include "pressure.h"
 #include "temperature.h"
+#include "motor.h"
+#include "led.h"
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <stdio.h>  // 添加stdio.h用于snprintf
+
+/* 常量定义 */
+#define REFRESH_RATE_MS    100     // 刷新率(ms)
+#define MAX_PRESSURE       100.0f  // 最大压力(GPa)
+#define MAX_TEMPERATURE    2000.0f // 最大温度(℃)
+#define MAX_SPEED         1000.0f  // 最大速度(mm/s)
+#define MAX_FEED          100.0f   // 最大进给量(mm)
 
 /* 全局变量 */
 static uint8_t KeyNum;                    // 按键值存储
@@ -88,8 +97,9 @@ static void display_menu_items(const MenuItem *items, uint8_t count, uint8_t sel
     for(uint8_t i = 0; i < 4 && (select/4)*4 + i < count; i++) {
         uint8_t idx = (select/4)*4 + i;
         OLED_ShowString(0, i*16, (char*)items[idx].text, OLED_8X16);
-            if(idx == select) {
-                OLED_ShowString(120, i*16, ">", OLED_8X16);
+		
+		if(idx == select) {
+			OLED_ShowString(120, i*16, ">", OLED_8X16);
         }
     }
     OLED_Update();
@@ -108,17 +118,18 @@ static void update_system_state(void) {
         g_sys_params.temperature = Get_Temperature();
         
         // 检查警报条件
-        float pressure_limit = 10.0f; // 示例压力限值
-        float diff_percent = (g_sys_params.pressure - pressure_limit) / pressure_limit * 100;
-        
-        if(diff_percent > 5) {
+        if(g_sys_params.pressure > MAX_PRESSURE * 0.9f) {
             g_sys_params.alert = ALERT_CRITICAL;
             g_sys_params.alert_count++;
-        } else if(diff_percent > 1) {
+            show_warning_effect();
+        } else if(g_sys_params.pressure > MAX_PRESSURE * 0.8f) {
             g_sys_params.alert = ALERT_WARNING;
         } else {
             g_sys_params.alert = ALERT_NONE;
         }
+        
+        // 更新电机状态
+        g_sys_params.motor_status = Motor_GetStatus();
         
         last_check = current_time;
     }
@@ -237,12 +248,13 @@ static void display_pressure_bars(void) {
     char buf[32];
     for(i = 0; i < 6; i++) {
         int bar_height = (int)(g_process_params.pressure[i] * 20.0f);
-        // 先绘制外框
+        // 绘制压力条
         OLED_DrawLine(10 + i*20, 63-bar_height, 10 + i*20, 63);
         OLED_DrawLine(10 + i*20, 63, 25 + i*20, 63);
         OLED_DrawLine(25 + i*20, 63, 25 + i*20, 63-bar_height);
         OLED_DrawLine(10 + i*20, 63-bar_height, 25 + i*20, 63-bar_height);
         
+        // 显示压力值
         snprintf(buf, sizeof(buf), "%.1f", g_process_params.pressure[i]);
         OLED_ShowString(8 + i*20, 52, buf, 12);
     }
@@ -263,12 +275,12 @@ static void display_temperature(void) {
     OLED_DrawLine(x, y+height, x+10, y+height);
     
     // 温度液柱
-    uint8_t temp_height = (uint8_t)((g_process_params.temperature / 200.0f) * height);
+    uint8_t temp_height = (uint8_t)((g_process_params.temperature / MAX_TEMPERATURE) * height);
     for(uint8_t i = 0; i < temp_height; i++) {
         OLED_DrawLine(x+2, y+height-i, x+8, y+height-i);
     }
     
-    // 显示数值
+    // 显示温度值
     OLED_Printf(x-30, y, OLED_8X16, "%.0fC", g_process_params.temperature);
 }
 
