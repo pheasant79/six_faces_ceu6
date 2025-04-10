@@ -38,6 +38,11 @@ motor_ceu6\motor.o: ../hardware/inc/motor.h
 motor_ceu6\motor.o: ../hardware/inc/Oled.h
 motor_ceu6\motor.o: ../hardware/inc/OLED_Data.h
 motor_ceu6\motor.o: ../system/inc/menu.h
-motor_ceu6\motor.o: ../system/inc/mymath.h
-motor_ceu6\motor.o: ../hardware/inc/Key.h
+motor_ceu6\motor.o: ../system/inc/pressure.h
+motor_ceu6\motor.o: ../system/inc/temperature.h
+motor_ceu6\motor.o: ../hardware/inc/key.h
+motor_ceu6\motor.o: D:\apks\Keil5\ARM\ARMCC\Bin\..\include\stdlib.h
 motor_ceu6\motor.o: D:\apks\Keil5\ARM\ARMCC\Bin\..\include\string.h
+motor_ceu6\motor.o: D:\apks\Keil5\ARM\ARMCC\Bin\..\include\math.h
+motor_ceu6\motor.o: D:\apks\Keil5\ARM\ARMCC\Bin\..\include\stdio.h
+motor_ceu6\motor.o: ../system/inc/mymath.h

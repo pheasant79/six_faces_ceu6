@@ -7,6 +7,11 @@
 
 #include "main.h"
 
+/* 常量定义 */
+#define MAX_TEMPERATURE    2000.0f // 最大温度(℃)
+#define MAX_SPEED          1000.0f // 最大速度(mm/s)
+#define MAX_FEED           100.0f  // 最大进给量(mm)
+
 /**
  * @brief 温度系统状态枚举
  */

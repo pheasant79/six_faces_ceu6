@@ -6,39 +6,75 @@
 #define __MENU_H__
 
 #include "main.h"
+#include "pressure.h"
+#include "temperature.h"
+#include "motor.h"
+#include "oled.h"
+#include "key.h"
+#include "led.h"
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <stdio.h>
 
-/* UI配置常量 */
-#define REFRESH_RATE_MS 500      // 数据刷新率
-#define WARNING_BLINK_MS 300     // 警告闪烁周期
-#define ANIMATION_DURATION_MS 280 // 动画持续时间
-#define SCREEN_WIDTH 128         // OLED屏幕宽度
-#define SCREEN_HEIGHT 64         // OLED屏幕高度
+/* 常量定义 */
+#define REFRESH_RATE_MS    100     // 刷新率(ms)
+#define MAX_PARTICLES      20      // 最大粒子数
+#define WARNING_BLINK_MS   300     // 警告闪烁周期
+#define ANIMATION_DURATION_MS 280  // 动画持续时间
+#define SCREEN_WIDTH       128     // OLED屏幕宽度
+#define SCREEN_HEIGHT      64      // OLED屏幕高度
 
-/* 警报级别枚举 */
-typedef enum {
-    ALERT_NONE,         // 无警报
-    ALERT_WARNING,      // 警告
-    ALERT_CRITICAL      // 危险
-} AlertLevel;
-
-/* 工艺状态枚举 */
+/**
+ * @brief 工艺状态枚举
+ */
 typedef enum {
     PROCESS_IDLE,       // 待机
     PROCESS_HEATING,    // 加热阶段
     PROCESS_PRESSING,   // 加压阶段
     PROCESS_TRANSFORM,  // 转化阶段
     PROCESS_COOLING,    // 冷却阶段
-    PROCESS_ERROR      // 错误状态
+    PROCESS_ERROR       // 错误状态
 } ProcessState;
 
-/* 显示模式枚举 */
+/**
+ * @brief 警报级别枚举
+ */
+typedef enum {
+    ALERT_NONE,         // 无警报
+    ALERT_WARNING,      // 警告
+    ALERT_CRITICAL      // 危险
+} AlertLevel;
+
+/**
+ * @brief 显示模式枚举
+ */
 typedef enum {
     DISPLAY_MODE_NORMAL,    // 正常模式
     DISPLAY_MODE_NIGHT,     // 夜间模式
     DISPLAY_MODE_DEMO       // 演示模式
 } DisplayMode;
 
-/* 系统参数结构体 */
+/**
+ * @brief 粒子效果数据
+ */
+typedef struct {
+    int8_t x, y;
+    int8_t dx, dy;
+    uint8_t active;
+} Particle;
+
+/**
+ * @brief 3D模型顶点结构
+ */
+typedef struct {
+    int8_t x, y, z;        // 3D坐标
+    uint8_t transformed;    // 转化状态
+} Vertex;
+
+/**
+ * @brief 系统参数结构体
+ */
 typedef struct {
     float pressure;         // 当前压力值
     float temperature;      // 当前温度值
@@ -47,9 +83,12 @@ typedef struct {
     ProcessState state;     // 工艺状态
     DisplayMode mode;       // 显示模式
     uint8_t is_calibrated;  // 校准状态
+    uint8_t motor_status;   // 电机状态
 } SystemParams;
 
-/* 六面顶压力数据结构 */
+/**
+ * @brief 六面顶压力数据结构
+ */
 typedef struct {
     float pressure[6];      // 六个面的压力值
     float temperature;      // 温度值
@@ -58,12 +97,6 @@ typedef struct {
     ProcessState state;     // 工艺状态
     DisplayMode mode;       // 显示模式
 } ProcessParams;
-
-/* 3D模型顶点结构 */
-typedef struct {
-    int8_t x, y, z;        // 3D坐标
-    uint8_t transformed;    // 转化状态
-} Vertex;
 
 /* 菜单项结构体 */
 typedef struct {
