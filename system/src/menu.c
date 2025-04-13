@@ -4,12 +4,20 @@
  */
 #include "menu.h"
 
+/* 外部变量声明 */
+extern TIM_HandleTypeDef htim5;  // TIM5句柄，用于LED PWM控制
+
 /* 全局变量 */
 static uint8_t KeyNum;                    // 按键值存储
 static SystemParams g_sys_params = {0};   // 系统参数
 static ProcessParams g_process_params = {0};     // 工艺参数
 static Particle particles[MAX_PARTICLES]; // 粒子效果数据
 static uint8_t oled_update_needed = 1;    // OLED更新标志位，1表示需要更新
+
+/* LED PWM控制变量 */
+static uint8_t g_led_pwm_duty = 0;        // LED PWM占空比(0-10)
+static uint8_t g_led_pwm_counter = 0;     // LED PWM计数器
+static uint8_t g_led_enabled = 0;         // LED启用状态，0表示禁用，1表示启用
 
 /* ===== 内部函数声明 ===== */
 // 显示
@@ -43,6 +51,9 @@ static void init_particles(void);          // 初始化粒子效果
 static void update_system_state(void);     // 更新系统状态
 static void toggle_night_mode(void);       // 切换白天/夜晚显示模式
 #endif
+
+// LED温度显示
+static void update_temperature_led(float temperature, float target_temp, float initial_temp); // 根据温度更新LED亮度
 
 /**
  * @brief  显示菜单项
@@ -550,6 +561,10 @@ int menu_process(void)
                     stage_start_time = HAL_GetTick();
                     g_sys_params.state = PROCESS_HEATING; // 更新系统状态
                     
+                    // 启动TIM5定时器，用于LED PWM控制
+                    HAL_TIM_Base_Start_IT(&htim5);
+                    g_led_enabled = 1; // 启用LED
+                    
                     // 启动所有电机，设置为反向旋转进行校准
                     for(uint8_t i = 0; i < 3; i++) {
                         Motor_SetDir(i, DIR_CCW);    // 设置方向为逆时针（反方向）
@@ -587,6 +602,10 @@ int menu_process(void)
                     // 紧急停止所有电机
                     Motor_EmergencyStop();
                     motors_running = 0;
+                    
+                    // 禁用LED
+                    g_led_enabled = 0;
+                    LED_TurnOff();
                     
                     // 显示停止信息
                     OLED_Clear();
@@ -671,10 +690,9 @@ int menu_process(void)
                         stage_start_time = current_time;
                         g_sys_params.state = PROCESS_HEATING;
                         
-                        // 保持电机运行但只是为了维持压力，不再增加压力
-                        for(uint8_t i = 0; i < 3; i++) {
-                            Motor_SetSpeed(i, 50); // 设置为最低速度，仅维持压力
-                        }
+                        // 停止所有电机，在加热、保温和冷却阶段保持压力不需要电机运行
+                        Motor_EmergencyStop();
+                        // 保持motors_running为1，表示工艺仍在进行中
                     }
                     break;
                     
@@ -686,6 +704,9 @@ int menu_process(void)
                     
                     // 保持压力
                     current_pressure = target_pressure;
+                    
+                    // 根据温度更新LED亮度
+                    update_temperature_led(current_temperature, target_temperature, 25.0f);
                     
                     // 更新进度
                     g_process_params.progress = 35.0f + 
@@ -704,6 +725,9 @@ int menu_process(void)
                     // 保温保压阶段 - 保持温度和压力
                     current_temperature = target_temperature;
                     current_pressure = target_pressure;
+                    
+                    // 保持LED亮度最大
+                    update_temperature_led(current_temperature, target_temperature, 25.0f);
                     
                     // 更新进度
                     g_process_params.progress = 50.0f + 
@@ -726,6 +750,9 @@ int menu_process(void)
                     // 保持压力
                     current_pressure = target_pressure;
                     
+                    // 根据温度更新LED亮度
+                    update_temperature_led(current_temperature, target_temperature, 25.0f);
+                    
                     // 更新进度
                     g_process_params.progress = 70.0f + 
                                               (float)elapsed_time / stage_duration[STAGE_COOL] * 15.0f;
@@ -737,7 +764,7 @@ int menu_process(void)
                         stage_start_time = current_time;
                         g_sys_params.state = PROCESS_IDLE;
                         
-                        // 开始卸压，电机反转
+                        // 开始卸压，重新启动电机并反转
                         for(uint8_t i = 0; i < 3; i++) {
                             Motor_SetDir(i, DIR_CCW);    // 设置方向为逆时针（反方向）
                             Motor_SetSpeed(i, 300);      // 设置为中速卸压
@@ -772,6 +799,12 @@ int menu_process(void)
                         OLED_ShowString(0, 0, "工艺完成", OLED_8X16);
                         OLED_ShowString(0, 16, "按任意键返回", OLED_8X16);
                         OLED_Update();
+                        
+                        // 停止LED PWM控制
+                        g_led_enabled = 0;
+                        HAL_TIM_Base_Stop_IT(&htim5);
+                        LED_TurnOff(); // 确保LED关闭
+                        
                         HAL_Delay(2000);
                     }
                     break;
@@ -1530,3 +1563,50 @@ static void toggle_night_mode(void) {
     }*/
 }
 #endif
+
+/**
+ * @brief 根据温度值设置LED PWM占空比
+ * @param temperature 当前温度值
+ * @param target_temp 目标温度
+ * @param initial_temp 初始温度
+ */
+static void update_temperature_led(float temperature, float target_temp, float initial_temp) {
+    // 计算温度与目标温度的接近程度
+    float progress = 0.0f;
+    
+    if (temperature <= initial_temp) {
+        progress = 0.0f;
+    } else if (temperature >= target_temp) {
+        progress = 1.0f;
+    } else {
+        progress = (temperature - initial_temp) / (target_temp - initial_temp);
+    }
+    
+    // 将进度值转换为PWM占空比(0-10)
+    g_led_pwm_duty = (uint8_t)(progress * 20.0f);
+}
+
+/**
+ * @brief TIM5中断回调函数 - 用于软件模拟PWM控制LED
+ * @note 此函数应该在TIM5中断回调中被调用
+ */
+void LED_PWM_Update(void) {
+    // 如果LED被禁用，直接关闭LED并返回
+    if (!g_led_enabled) {
+        LED_TurnOff();
+        return;
+    }
+    
+    // 软件PWM实现：计数器从0到20循环
+    g_led_pwm_counter = (g_led_pwm_counter + 1) % 20;
+    
+    // 如果计数器小于占空比，LED亮；否则LED灭
+    if (g_led_pwm_counter < g_led_pwm_duty) {
+        LED_TurnOn();
+    } else if(g_led_pwm_counter < 20) {
+        LED_TurnOff();
+    } else {
+        g_led_pwm_counter = 0;
+        g_led_pwm_duty = 0;
+    }
+}

@@ -24,6 +24,8 @@
 /* USER CODE BEGIN Includes */
 #include "key.h"
 #include "motor.h"
+// 引入LED PWM控制函数声明
+extern void LED_PWM_Update(void);
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -269,6 +271,7 @@ void TIM5_IRQHandler(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     if (htim == &htim5) {
         Key_Tick(); // 调用按键扫描函数
+        LED_PWM_Update(); // 调用LED PWM更新函数
         return;
     }
     
