@@ -1,17 +1,17 @@
 /**
  * @file key.c
- * @brief å…­é¢é¡¶æŒ‰é”®é©±åŠ¨å®ç°
+ * @brief ÁùÃæ¶¥°´¼üÇı¶¯ÊµÏÖ
  */
 #include "key.h"
 
-/* æ¶ˆæŠ–æ—¶é—´å®šä¹‰ */
-#define KEY_DEBOUNCE_TIME  10  // 20msæ¶ˆæŠ–(10ä¸ª2mså‘¨æœŸ)
+/* Ïû¶¶Ê±¼ä¶¨Òå */
+#define KEY_DEBOUNCE_TIME  10  // 20msÏû¶¶(10¸ö2msÖÜÆÚ)
 
-// æŒ‰é”®çŠ¶æ€è®°å½•(1è¡¨ç¤ºæœªæŒ‰ä¸‹,0è¡¨ç¤ºæŒ‰ä¸‹)
-static uint8_t key_prev_state[KEY_NUM] = {1, 1, 1, 1, 1};  // åˆå§‹ä¸ºé‡Šæ”¾çŠ¶æ€(é«˜ç”µå¹³)
-uint8_t key_num = 0;  // å½“å‰æŒ‰é”®ç¼–å·
+// °´¼ü×´Ì¬¼ÇÂ¼(1±íÊ¾Î´°´ÏÂ,0±íÊ¾°´ÏÂ)
+static uint8_t key_prev_state[KEY_NUM] = {1, 1, 1, 1, 1};  // ³õÊ¼ÎªÊÍ·Å×´Ì¬(¸ßµçÆ½)
+uint8_t key_num = 0;  // µ±Ç°°´¼ü±àºÅ
 
-/* æŒ‰é”®GPIOå®šä¹‰(æŒ‰å®é™…ç¡¬ä»¶è¿æ¥é…ç½®) */
+/* °´¼üGPIO¶¨Òå(°´Êµ¼ÊÓ²¼şÁ¬½ÓÅäÖÃ) */
 static const Key_GPIO KEY_GPIO[KEY_NUM] = {
     {Key1_GPIO_Port, Key1_Pin},  // Key1 - PB7
     {Key2_GPIO_Port, Key2_Pin},  // Key2 - PB8
@@ -21,30 +21,30 @@ static const Key_GPIO KEY_GPIO[KEY_NUM] = {
 };
 
 /**
- * @brief  æŒ‰é”®åˆå§‹åŒ–
- * @note   GPIOå·²åœ¨CubeMXä¸­é…ç½®ä¸ºä¸Šæ‹‰è¾“å…¥
+ * @brief  °´¼ü³õÊ¼»¯
+ * @note   GPIOÒÑÔÚCubeMXÖĞÅäÖÃÎªÉÏÀ­ÊäÈë
  * @retval None
  */
 void Key_Init(void) {
-    // GPIOå·²åœ¨CubeMXä¸­å®Œæˆé…ç½®
-    // 1. ä½¿èƒ½GPIOBæ—¶é’Ÿ
-    // 2. é…ç½®ä¸ºä¸Šæ‹‰è¾“å…¥æ¨¡å¼
+    // GPIOÒÑÔÚCubeMXÖĞÍê³ÉÅäÖÃ
+    // 1. Ê¹ÄÜGPIOBÊ±ÖÓ
+    // 2. ÅäÖÃÎªÉÏÀ­ÊäÈëÄ£Ê½
 }
 
 /**
- * @brief  è·å–å½“å‰è§¦å‘çš„æŒ‰é”®ç¼–å·
- * @note   éé˜»å¡å¼è¯»å–,è¯»å–åè‡ªåŠ¨æ¸…é™¤æŒ‰é”®çŠ¶æ€
- * @retval uint8_t æŒ‰é”®ç¼–å·(1-5),0è¡¨ç¤ºæ— æŒ‰é”®
+ * @brief  »ñÈ¡µ±Ç°´¥·¢µÄ°´¼ü±àºÅ
+ * @note   ·Ç×èÈûÊ½¶ÁÈ¡,¶ÁÈ¡ºó×Ô¶¯Çå³ı°´¼ü×´Ì¬
+ * @retval uint8_t °´¼ü±àºÅ(1-5),0±íÊ¾ÎŞ°´¼ü
  */
 uint8_t Key_GetNum(void) {
     uint8_t temp = key_num;
-    key_num = 0;  // æ¸…é™¤æŒ‰é”®çŠ¶æ€
+    key_num = 0;  // Çå³ı°´¼ü×´Ì¬
     return temp;
 }
 
 /**
- * @brief  æŒ‰é”®æ‰«æå¤„ç†å‡½æ•°
- * @note   éœ€è¦åœ¨2mså®šæ—¶å™¨ä¸­æ–­ä¸­è°ƒç”¨
+ * @brief  °´¼üÉ¨Ãè´¦Àíº¯Êı
+ * @note   ĞèÒªÔÚ2ms¶¨Ê±Æ÷ÖĞ¶ÏÖĞµ÷ÓÃ
  * @retval None
  */
 void Key_Tick(void) {
@@ -55,7 +55,7 @@ void Key_Tick(void) {
     for(uint8_t i = 0; i < KEY_NUM; i++) {
         GPIO_PinState current = HAL_GPIO_ReadPin(KEY_GPIO[i].GPIO_Port, 
                                                KEY_GPIO[i].GPIO_Pin);
-        // æ£€æµ‹ä¸Šå‡æ²¿å¹¶æ›´æ–°çŠ¶æ€
+        // ¼ì²âÉÏÉıÑØ²¢¸üĞÂ×´Ì¬
         if(!key_prev_state[i] && current) key_num = i + 1;
         key_prev_state[i] = current;
     }

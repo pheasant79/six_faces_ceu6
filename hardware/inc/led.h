@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
   * @file    led.h
-  * @brief   LED控制模块头文件
-  * @details 控制PA7引脚作为开漏输出实现LED控制
+  * @brief   LED����ģ��ͷ�ļ�
+  * @details ����PA7������Ϊ��©���ʵ��LED����
   ******************************************************************************
   */
 
@@ -13,35 +13,35 @@
 extern "C" {
 #endif
 
-/* 包含头文件 ------------------------------------------------------------------*/
+/* ����ͷ�ļ� ------------------------------------------------------------------*/
 #include "main.h"
 
-/* 宏定义 ----------------------------------------------------------------------*/
-#define LED_PORT                 lcd_GPIO_Port    // LED控制端口
-#define LED_PIN                  lcd_Pin          // LED控制引脚
+/* �궨�� ----------------------------------------------------------------------*/
+#define LED_PORT                 lcd_GPIO_Port    // LED���ƶ˿�
+#define LED_PIN                  lcd_Pin          // LED��������
 
-/* LED控制宏 */
-#define LED_ON()                 HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_RESET)   // LED打开
-#define LED_OFF()                HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET)     // LED关闭
+/* LED���ƺ� */
+#define LED_ON()                 HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_RESET)   // LED��
+#define LED_OFF()                HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET)     // LED�ر�
 
-/* 导出函数声明 ----------------------------------------------------------------*/
+/* ������������ ----------------------------------------------------------------*/
 
-//==== 基础初始化函数 ====//
-// LED初始化函数
+//==== ������ʼ������ ====//
+// LED��ʼ������
 void LED_Init(void);
 
-//==== LED控制函数 ====//
-// 打开LED
+//==== LED���ƺ��� ====//
+// ��LED
 void LED_TurnOn(void);
 
-// 关闭LED
+// �ر�LED
 void LED_TurnOff(void);
 
-// 切换LED状态
+// �л�LED״̬
 void LED_Toggle(void);
 
-//==== LED状态获取 ====//
-// 获取LED当前状态 - 返回值: 0-关闭, 1-打开
+//==== LED״̬��ȡ ====//
+// ��ȡLED��ǰ״̬ - ����ֵ: 0-�ر�, 1-��
 uint8_t LED_GetState(void);
 
 #ifdef __cplusplus

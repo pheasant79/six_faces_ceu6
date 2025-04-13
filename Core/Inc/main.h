@@ -75,10 +75,10 @@ void Error_Handler(void);
 #define Motor2_D_GPIO_Port GPIOA
 #define lcd_Pin GPIO_PIN_7
 #define lcd_GPIO_Port GPIOA
-#define Key1_Pin GPIO_PIN_0
-#define Key1_GPIO_Port GPIOB
-#define Key2_Pin GPIO_PIN_1
-#define Key2_GPIO_Port GPIOB
+#define Key3_Pin GPIO_PIN_0
+#define Key3_GPIO_Port GPIOB
+#define Key4_Pin GPIO_PIN_1
+#define Key4_GPIO_Port GPIOB
 #define OLED_SCL_Pin GPIO_PIN_8
 #define OLED_SCL_GPIO_Port GPIOA
 #define OLED_SDA_Pin GPIO_PIN_9
@@ -99,12 +99,12 @@ void Error_Handler(void);
 #define Motor3_C_GPIO_Port GPIOB
 #define Motor3_D_Pin GPIO_PIN_6
 #define Motor3_D_GPIO_Port GPIOB
-#define Key3_Pin GPIO_PIN_7
-#define Key3_GPIO_Port GPIOB
-#define Key4_Pin GPIO_PIN_8
-#define Key4_GPIO_Port GPIOB
-#define Key5_Pin GPIO_PIN_9
+#define Key5_Pin GPIO_PIN_7
 #define Key5_GPIO_Port GPIOB
+#define Key1_Pin GPIO_PIN_8
+#define Key1_GPIO_Port GPIOB
+#define Key2_Pin GPIO_PIN_9
+#define Key2_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

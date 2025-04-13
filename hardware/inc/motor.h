@@ -1,6 +1,6 @@
 /**
  * @file motor.h
- * @brief å…­é¢é¡¶æ­¥è¿›ç”µæœºé©±åŠ¨å¤´æ–‡ä»¶
+ * @brief ÁùÃæ¶¥²½½øµç»úÇý¶¯Í·ÎÄ¼þ
  */
 #ifndef __MOTOR_H__
 #define __MOTOR_H__
@@ -8,7 +8,7 @@
 #include "main.h"
 
 /*****************************************************
- * æ­¥è¿›ç”µæœºå¼•è„šå®šä¹‰(ä½Žç”µå¹³æœ‰æ•ˆ)
+ * ²½½øµç»úÒý½Å¶¨Òå(µÍµçÆ½ÓÐÐ§)
  * motor1: TIM2
  * motor1_A----PA10  motor1_B----PA11
  * motor1_C----PA12  motor1_D----PA15
@@ -22,104 +22,104 @@
  * motor3_C----PB5   motor3_D----PB6
 *****************************************************/
 
-/* åŸºæœ¬å‚æ•°å®šä¹‰ */
-#define MOTOR_NUM           3     // ç”µæœºæ•°é‡
-#define MOTOR_TIMEOUT     1000    // è¶…æ—¶æ—¶é—´(ms)
+/* »ù±¾²ÎÊý¶¨Òå */
+#define MOTOR_NUM           3     // µç»úÊýÁ¿
+#define MOTOR_TIMEOUT     1000    // ³¬Ê±Ê±¼ä(ms)
 
 /**
- * ã€çŠ¶æ€ç æžšä¸¾ã€‘
- * å®šä¹‰ç”µæœºæŽ§åˆ¶æ“ä½œè¿”å›žçš„çŠ¶æ€ç 
+ * ¡¾×´Ì¬ÂëÃ¶¾Ù¡¿
+ * ¶¨Òåµç»ú¿ØÖÆ²Ù×÷·µ»ØµÄ×´Ì¬Âë
  */
 typedef enum {
-    MOTOR_OK = 0,                 // æ­£å¸¸
-    MOTOR_ERR_INVALID_ID,         // æ— æ•ˆç”µæœºID
-    MOTOR_ERR_SPEED_RANGE,        // é€Ÿåº¦è¶…å‡ºèŒƒå›´
-    MOTOR_ERR_TIM_START,          // å®šæ—¶å™¨å¯åŠ¨é”™è¯¯
-    MOTOR_ERR_ALREADY_RUNNING,    // ç”µæœºå·²åœ¨è¿è¡Œ
-    MOTOR_ERR_NOT_RUNNING         // ç”µæœºæœªè¿è¡Œ
+    MOTOR_OK = 0,                 // Õý³£
+    MOTOR_ERR_INVALID_ID,         // ÎÞÐ§µç»úID
+    MOTOR_ERR_SPEED_RANGE,        // ËÙ¶È³¬³ö·¶Î§
+    MOTOR_ERR_TIM_START,          // ¶¨Ê±Æ÷Æô¶¯´íÎó
+    MOTOR_ERR_ALREADY_RUNNING,    // µç»úÒÑÔÚÔËÐÐ
+    MOTOR_ERR_NOT_RUNNING         // µç»úÎ´ÔËÐÐ
 } Motor_Status;
 
 /**
- * ã€è¿è¡ŒçŠ¶æ€æžšä¸¾ã€‘
- * å®šä¹‰ç”µæœºçš„å½“å‰è¿è¡ŒçŠ¶æ€
+ * ¡¾ÔËÐÐ×´Ì¬Ã¶¾Ù¡¿
+ * ¶¨Òåµç»úµÄµ±Ç°ÔËÐÐ×´Ì¬
  */
 typedef enum {
-    MOTOR_STOP = 0,               // åœæ­¢
-    MOTOR_RUNNING,                // è¿è¡Œä¸­
-    MOTOR_ERROR                   // é”™è¯¯
+    MOTOR_STOP = 0,               // Í£Ö¹
+    MOTOR_RUNNING,                // ÔËÐÐÖÐ
+    MOTOR_ERROR                   // ´íÎó
 } Motor_State;
 
 /**
- * ã€æ—‹è½¬æ–¹å‘æžšä¸¾ã€‘
- * å®šä¹‰ç”µæœºçš„æ—‹è½¬æ–¹å‘
+ * ¡¾Ðý×ª·½ÏòÃ¶¾Ù¡¿
+ * ¶¨Òåµç»úµÄÐý×ª·½Ïò
  */
 typedef enum {
-    DIR_NONE = 0,                 // æ— æ–¹å‘
-    DIR_CW,                       // é¡ºæ—¶é’ˆ
-    DIR_CCW                       // é€†æ—¶é’ˆ
+    DIR_NONE = 0,                 // ÎÞ·½Ïò
+    DIR_CW,                       // Ë³Ê±Õë
+    DIR_CCW                       // ÄæÊ±Õë
 } Motor_Dir;
 
 /**
- * ã€ç”µæœºç»“æž„ä½“ã€‘
- * ä¿å­˜ç”µæœºçš„æ‰€æœ‰é…ç½®å’ŒçŠ¶æ€ä¿¡æ¯
+ * ¡¾µç»ú½á¹¹Ìå¡¿
+ * ±£´æµç»úµÄËùÓÐÅäÖÃºÍ×´Ì¬ÐÅÏ¢
  */
 typedef struct {
-    /* åŸºæœ¬ä¿¡æ¯ */
-    uint8_t id;                   // ç”µæœºID (0-2)
+    /* »ù±¾ÐÅÏ¢ */
+    uint8_t id;                   // µç»úID (0-2)
     
-    /* ç¡¬ä»¶èµ„æº */
-    TIM_HandleTypeDef* htim;      // å®šæ—¶å™¨å¥æŸ„
-    DMA_HandleTypeDef* hdma;      // DMAå¥æŸ„(ä¿ç•™ç”¨äºŽå…¼å®¹æ€§)
-    GPIO_TypeDef* gpio_port;      // GPIOç«¯å£
-    uint16_t pins;                // GPIOå¼•è„šæŽ©ç 
+    /* Ó²¼þ×ÊÔ´ */
+    TIM_HandleTypeDef* htim;      // ¶¨Ê±Æ÷¾ä±ú
+    DMA_HandleTypeDef* hdma;      // DMA¾ä±ú(±£ÁôÓÃÓÚ¼æÈÝÐÔ)
+    GPIO_TypeDef* gpio_port;      // GPIO¶Ë¿Ú
+    uint16_t pins;                // GPIOÒý½ÅÑÚÂë
 
-    /* è¿åŠ¨å‚æ•° */
-    Motor_State state;            // è¿è¡ŒçŠ¶æ€
-    Motor_Dir dir;                // æ—‹è½¬æ–¹å‘
-    uint8_t phase_index;          // å½“å‰ç›¸ä½ç´¢å¼• (0-3)
-    const uint32_t *phases;       // ç›¸ä½è¡¨
+    /* ÔË¶¯²ÎÊý */
+    Motor_State state;            // ÔËÐÐ×´Ì¬
+    Motor_Dir dir;                // Ðý×ª·½Ïò
+    uint8_t phase_index;          // µ±Ç°ÏàÎ»Ë÷Òý (0-3)
+    const uint32_t *phases;       // ÏàÎ»±í
 
-    /* é€Ÿåº¦å‚æ•° */
-    uint32_t max_speed;           // æœ€å¤§é€Ÿåº¦(æ­¥/ç§’)
-    uint32_t min_speed;           // æœ€å°é€Ÿåº¦(æ­¥/ç§’)
+    /* ËÙ¶È²ÎÊý */
+    uint32_t max_speed;           // ×î´óËÙ¶È(²½/Ãë)
+    uint32_t min_speed;           // ×îÐ¡ËÙ¶È(²½/Ãë)
     
-    /* çŠ¶æ€ç›‘æŽ§ */
-    uint32_t step_counter;        // æ­¥æ•°è®¡æ•°å™¨
-    uint32_t actual_speed;        // å®žé™…é€Ÿåº¦
+    /* ×´Ì¬¼à¿Ø */
+    uint32_t step_counter;        // ²½Êý¼ÆÊýÆ÷
+    uint32_t actual_speed;        // Êµ¼ÊËÙ¶È
 } Motor;
 
 extern Motor motors[MOTOR_NUM];
 
-/*====================== å‡½æ•°å£°æ˜Ž ======================*/
+/*====================== º¯ÊýÉùÃ÷ ======================*/
 
-/*--------------------- åˆå§‹åŒ–å‡½æ•° ---------------------*/
-Motor_Status Motor_InitAll(void); // åˆå§‹åŒ–æ‰€æœ‰ç”µæœº
+/*--------------------- ³õÊ¼»¯º¯Êý ---------------------*/
+Motor_Status Motor_InitAll(void); // ³õÊ¼»¯ËùÓÐµç»ú
 
-/*--------------------- æŽ§åˆ¶å‡½æ•° ---------------------*/
-// å¯åŠ¨æŒ‡å®šIDç”µæœº
+/*--------------------- ¿ØÖÆº¯Êý ---------------------*/
+// Æô¶¯Ö¸¶¨IDµç»ú
 Motor_Status Motor_Run(uint8_t id);
 
-// åœæ­¢æŒ‡å®šIDç”µæœº
+// Í£Ö¹Ö¸¶¨IDµç»ú
 Motor_Status Motor_Stop(uint8_t id);
 
-// ç´§æ€¥åœæ­¢æ‰€æœ‰ç”µæœº
+// ½ô¼±Í£Ö¹ËùÓÐµç»ú
 Motor_Status Motor_EmergencyStop(void);
 
-// è®¾ç½®ç”µæœºæ—‹è½¬æ–¹å‘(DIR_CW/DIR_CCW)
+// ÉèÖÃµç»úÐý×ª·½Ïò(DIR_CW/DIR_CCW)
 Motor_Status Motor_SetDir(uint8_t id, Motor_Dir dir);
 
-// è®¾ç½®ç”µæœºé€Ÿåº¦(æ­¥/ç§’)
+// ÉèÖÃµç»úËÙ¶È(²½/Ãë)
 Motor_Status Motor_SetSpeed(uint8_t id, uint32_t steps_per_sec);
 
-/*--------------------- çŠ¶æ€æŸ¥è¯¢å‡½æ•° ---------------------*/
-// èŽ·å–ç”µæœºè¿è¡ŒçŠ¶æ€(MOTOR_STOP/MOTOR_RUNNING/MOTOR_ERROR)
+/*--------------------- ×´Ì¬²éÑ¯º¯Êý ---------------------*/
+// »ñÈ¡µç»úÔËÐÐ×´Ì¬(MOTOR_STOP/MOTOR_RUNNING/MOTOR_ERROR)
 Motor_State Motor_GetState(uint8_t id);
 
-// èŽ·å–ç”µæœºå½“å‰æ­¥æ•°
+// »ñÈ¡µç»úµ±Ç°²½Êý
 uint32_t Motor_GetStepCount(uint8_t id);
 
-/*--------------------- å†…éƒ¨å‡½æ•° ---------------------*/
-// è½¯ä»¶è§¦å‘ç›¸ä½æ›´æ–°(ç”±å®šæ—¶å™¨ä¸­æ–­è°ƒç”¨)
+/*--------------------- ÄÚ²¿º¯Êý ---------------------*/
+// Èí¼þ´¥·¢ÏàÎ»¸üÐÂ(ÓÉ¶¨Ê±Æ÷ÖÐ¶Ïµ÷ÓÃ)
 void motor_update_phase(Motor *m);
 
 #endif /* __MOTOR_H__ */

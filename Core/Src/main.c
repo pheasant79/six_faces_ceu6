@@ -97,44 +97,40 @@ int main(void)
   MX_TIM4_Init();
   MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
-  
-  
-  
-  
-  // 配置TIM2/3/4用于电机控制(2ms DMA传输)
-  // 注意:不要直接启动定时器,由Motor_Run函数控制启动
-  
+	HAL_Delay(1000);
+	
+	// 配置TIM2/3/4用于电机控制(2ms 传输)
+	// 注意:不要直接启动定时器,由Motor_Run函数控制启动
+    // 启动TIM5用于按键扫描(2ms中断)
+	HAL_TIM_Base_Start_IT(&htim5);
+	
+	Key_Init();
+	OLED_Init();
+	HAL_Delay(100);
+	OLED_Clear();
+	HAL_Delay(100);
+	Pressure_Init();
+	Temperature_Init();
+	Motor_InitAll();
+//	
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  // 启动TIM5用于按键扫描(2ms中断)
-    HAL_TIM_Base_Start_IT(&htim5);
-//  
-//  HAL_Delay(100);
-//  // 初始化各个模块
-//  Key_Init();
-//  OLED_Init();
 
-//  Pressure_Init();
-//  Temperature_Init();
-//  
-	Motor_InitAll();
 	Motor_Run(1);
-//	Motor_Run(0);
-//	Motor_Run(2);
+	Motor_Run(0);
+	Motor_Run(2);
 
-//  HAL_GPIO_WritePin(GPIOA, Motor2_A_Pin|Motor2_B_Pin|Motor2_C_Pin|Motor2_D_Pin
-//                          |OLED_SCL_Pin|OLED_SDA_Pin|Motor1_A_Pin|Motor1_B_Pin
-//                          |Motor1_C_Pin|Motor1_D_Pin, GPIO_PIN_SET);
-
-  while(1)
-  {
+	while(1)
+	{
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//    menu1(); // 进入主菜单循环
-  }
+
+    	menu1(); // 进入主菜单循环
+	  
+	}
   /* USER CODE END 3 */
 }
 

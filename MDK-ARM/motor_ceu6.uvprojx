@@ -668,6 +668,16 @@
           <GroupName>hardware</GroupName>
           <Files>
             <File>
+              <FileName>Key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\hardware\src\Key.c</FilePath>
+            </File>
+            <File>
+              <FileName>led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\hardware\src\led.c</FilePath>
+            </File>
+            <File>
               <FileName>motor.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\hardware\src\motor.c</FilePath>
@@ -681,11 +691,6 @@
               <FileName>Oled_Data.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\hardware\src\Oled_Data.c</FilePath>
-            </File>
-            <File>
-              <FileName>Key.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\hardware\src\Key.c</FilePath>
             </File>
           </Files>
         </Group>

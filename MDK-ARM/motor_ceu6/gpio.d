@@ -41,6 +41,7 @@ motor_ceu6\gpio.o: ../system/inc/menu.h
 motor_ceu6\gpio.o: ../system/inc/pressure.h
 motor_ceu6\gpio.o: ../system/inc/temperature.h
 motor_ceu6\gpio.o: ../hardware/inc/key.h
+motor_ceu6\gpio.o: ../hardware/inc/led.h
 motor_ceu6\gpio.o: D:\apks\Keil5\ARM\ARMCC\Bin\..\include\stdlib.h
 motor_ceu6\gpio.o: D:\apks\Keil5\ARM\ARMCC\Bin\..\include\string.h
 motor_ceu6\gpio.o: D:\apks\Keil5\ARM\ARMCC\Bin\..\include\math.h

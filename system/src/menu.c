@@ -1,48 +1,51 @@
 /**
  * @file menu.c
- * @brief å…­é¢é¡¶èœå•ç³»ç»Ÿå®ç° - ç¢³è½¬çŸ³å¢¨è¿‡ç¨‹å¯è§†åŒ–
+ * @brief ÏµÍ³ÊµÏÖ - Ä£ÄâÑ¹Á¦»ú
  */
 #include "menu.h"
 
-/* å…¨å±€å˜é‡ */
-static uint8_t KeyNum;                    // æŒ‰é”®å€¼å­˜å‚¨
-static SystemParams g_sys_params = {0};   // ç³»ç»Ÿå‚æ•°
-static ProcessParams g_process_params = {0};     // å·¥è‰ºå‚æ•°
-static Particle particles[MAX_PARTICLES]; // ç²’å­æ•ˆæœæ•°æ®
+/* È«¾Ö±äÁ¿ */
+static uint8_t KeyNum;                    // °´¼üÖµ´æ´¢
+static SystemParams g_sys_params = {0};   // ÏµÍ³²ÎÊı
+static ProcessParams g_process_params = {0};     // ¹¤ÒÕ²ÎÊı
+static Particle particles[MAX_PARTICLES]; // Á£×ÓĞ§¹ûÊı¾İ
+static uint8_t oled_update_needed = 1;    // OLED¸üĞÂ±êÖ¾Î»£¬1±íÊ¾ĞèÒª¸üĞÂ
 
-/* ===== å†…éƒ¨å‡½æ•°å£°æ˜ ===== */
-// æ˜¾ç¤ºå‡½æ•°
-static void display_3d_model(void);         // æ˜¾ç¤º3Dç«‹æ–¹ä½“æ¨¡å‹
-static void display_pressure_bars(void);    // æ˜¾ç¤ºå…­é¢å‹åŠ›æ¡å½¢å›¾
-static void display_temperature(void);      // æ˜¾ç¤ºæ¸©åº¦è®¡å’Œæ¸©åº¦å€¼
-static void display_progress(void);         // æ˜¾ç¤ºè¿›åº¦æ¡å’Œç™¾åˆ†æ¯”
-static void display_status_bar(void);       // æ˜¾ç¤ºç³»ç»ŸçŠ¶æ€æ 
-static void display_animation_frame(void);  // æ˜¾ç¤ºåŠ¨ç”»å¸§
-static void display_menu_items(const MenuItem *items, uint8_t count, uint8_t select); // æ˜¾ç¤ºèœå•é¡¹
-static void display_value_with_animation(float value, uint8_t x, uint8_t y); // å¸¦åŠ¨ç”»æ•ˆæœæ˜¾ç¤ºæ•°å€¼
+/* ===== ÄÚ²¿º¯ÊıÉùÃ÷ ===== */
+// ÏÔÊ¾
+static void display_3d_model(void);         // ÏÔÊ¾3DÄ£ĞÍ
+static void display_pressure_bars(void);    // ÏÔÊ¾Ñ¹Á¦ÌõĞÎÍ¼
+static void display_temperature(void);      // ÏÔÊ¾ÎÂ¶È¼ÆºÍÎÂ¶ÈÖµ
+static void display_progress(void);         // ÏÔÊ¾½ø¶ÈÌõºÍ°Ù·Ö±È
+static void display_status_bar(void);       // ÏÔÊ¾ÏµÍ³×´Ì¬À¸
+//static void display_animation_frame(void);  // ÏÔÊ¾¶¯»­Ö¡
+static void display_menu_items(const MenuItem *items, uint8_t count, uint8_t select); // ÏÔÊ¾²Ëµ¥Ïî
+#if 0  // Î´Ê¹ÓÃµÄº¯Êı£¬×¢ÊÍµôÒÔÏû³ı¾¯¸æ
+static void display_value_with_animation(float value, uint8_t x, uint8_t y); // ÏÔÊ¾ÓĞĞ§Êı¾İÖµ
+#endif
 
-// äº¤äº’ä¸æ•°æ®å¤„ç†å‡½æ•°
-static void handle_touch_input(void);    // å¤„ç†è§¦æ‘¸å±è¾“å…¥
-static void update_parameters(void);     // æ›´æ–°ç³»ç»Ÿå‚æ•°
-static void save_history_data(void);     // ä¿å­˜å†å²æ•°æ®
-static void process_update(void);        // æ›´æ–°å·¥è‰ºå‚æ•°
+// ´¦Àí´¥ÃşÊäÈë
+//static void handle_touch_input(void);    // ´¦Àí´¥ÃşÊäÈë
+//static void update_parameters(void);     // ¸üĞÂÏµÍ³²ÎÊı
+//static void save_history_data(void);     // ±£´æÀúÊ·Êı¾İ
+//static void process_update(void);        // ´¦Àí¹¤ÒÕ²ÎÊı
 
-// ç‰¹æ•ˆå‡½æ•°
-static void animate_transformation(void);  // çŸ³å¢¨è½¬åŒ–è¿‡ç¨‹åŠ¨ç”»
-static void show_warning_effect(void);     // è­¦å‘ŠçŠ¶æ€é—ªçƒæ•ˆæœ
-static void update_particle_effects(void); // ç²’å­æ•ˆæœåŠ¨ç”»
-static void init_particles(void);          // åˆå§‹åŒ–ç²’å­æ•ˆæœ
+// ÓĞĞ§Êı¾İ
+//static void animate_transformation(void);  // Ä£Äâ±ä»»¹Ì¶¨
+#if 0
+static void show_warning_effect(void);     // ÏÔÊ¾×´Ì¬¾¯¸æĞ§¹û
+#endif
+static void update_particle_effects(void); // ¸üĞÂÁ£×ÓĞ§¹û
+static void init_particles(void);          // ³õÊ¼»¯Á£×ÓĞ§¹û
 
-// ç³»ç»ŸåŠŸèƒ½å‡½æ•°
-static void update_system_state(void);     // æ›´æ–°ç³»ç»ŸçŠ¶æ€ï¼Œæ£€æŸ¥è­¦æŠ¥æ¡ä»¶
-static void toggle_night_mode(void);       // åˆ‡æ¢å¤œé—´/æ­£å¸¸æ˜¾ç¤ºæ¨¡å¼
+// ÏµÍ³¹¦ÄÜ
+#if 0  // Î´Ê¹ÓÃµÄº¯Êı£¬×¢ÊÍµôÒÔÏû³ı¾¯¸æ
+static void update_system_state(void);     // ¸üĞÂÏµÍ³×´Ì¬
+static void toggle_night_mode(void);       // ÇĞ»»°×Ìì/Ò¹ÍíÏÔÊ¾Ä£Ê½
+#endif
 
 /**
- * @brief  æ˜¾ç¤ºèœå•é¡¹
- * @param  items èœå•é¡¹æ•°ç»„
- * @param  count èœå•é¡¹æ•°é‡
- * @param  select å½“å‰é€‰ä¸­é¡¹
- * @retval None
+ * @brief  ÏÔÊ¾²Ëµ¥Ïî
  */
 static void display_menu_items(const MenuItem *items, uint8_t count, uint8_t select) {
     OLED_Clear();
@@ -54,66 +57,22 @@ static void display_menu_items(const MenuItem *items, uint8_t count, uint8_t sel
 			OLED_ShowString(120, i*16, ">", OLED_8X16);
         }
     }
-    OLED_Update();
+    OLED_Update(); // Ö±½ÓÔÚ´Ëº¯ÊıÄÚ¸üĞÂOLEDÏÔÊ¾
+    oled_update_needed = 0; // ÖØÖÃ±êÖ¾Î»
 }
 
 /**
- * @brief æ›´æ–°ç³»ç»ŸçŠ¶æ€
- */
-static void update_system_state(void) {
-    static uint32_t last_check = 0;
-    uint32_t current_time = HAL_GetTick();
-    
-    if(current_time - last_check >= REFRESH_RATE_MS) {
-        // æ›´æ–°å‹åŠ›å’Œæ¸©åº¦
-        g_sys_params.pressure = Get_Pressure();
-        g_sys_params.temperature = Get_Temperature();
-        
-        // æ£€æŸ¥è­¦æŠ¥æ¡ä»¶
-        if(g_sys_params.pressure > MAX_PRESSURE * 0.9f) {
-            g_sys_params.alert = ALERT_CRITICAL;
-            g_sys_params.alert_count++;
-            show_warning_effect();
-        } else if(g_sys_params.pressure > MAX_PRESSURE * 0.8f) {
-            g_sys_params.alert = ALERT_WARNING;
-        } else {
-            g_sys_params.alert = ALERT_NONE;
-        }
-        
-        // æ›´æ–°ç”µæœºçŠ¶æ€ - æ£€æŸ¥æ‰€æœ‰ç”µæœº
-        Motor_State status0 = Motor_GetState(0);
-        Motor_State status1 = Motor_GetState(1);
-        Motor_State status2 = Motor_GetState(2);
-        
-        // å¦‚æœä»»ä¸€ç”µæœºçŠ¶æ€ä¸ºMOTOR_ERRORï¼Œåˆ™ç³»ç»ŸçŠ¶æ€ä¸ºé”™è¯¯
-        if(status0 == MOTOR_ERROR || status1 == MOTOR_ERROR || status2 == MOTOR_ERROR) {
-            g_sys_params.motor_status = MOTOR_ERROR;
-        }
-        // å¦‚æœä»»ä¸€ç”µæœºçŠ¶æ€ä¸ºMOTOR_RUNNINGï¼Œåˆ™ç³»ç»ŸçŠ¶æ€ä¸ºè¿è¡Œ
-        else if(status0 == MOTOR_RUNNING || status1 == MOTOR_RUNNING || status2 == MOTOR_RUNNING) {
-            g_sys_params.motor_status = MOTOR_RUNNING;
-        }
-        // å¦åˆ™ç³»ç»ŸçŠ¶æ€ä¸ºåœæ­¢
-        else {
-            g_sys_params.motor_status = MOTOR_STOP;
-        }
-        
-        last_check = current_time;
-    }
-}
-
-/**
- * @brief æ˜¾ç¤ºçŠ¶æ€æ 
+ * @brief ÏÔÊ¾×´Ì¬À¸
  */
 static void display_status_bar(void) {
     char status_text[16];
     const char *state_str[] = {"IDLE", "HEAT", "PRESS", "HOLD", "COOL", "ERR"};
     
-    // æ˜¾ç¤ºç³»ç»ŸçŠ¶æ€
+    // ÏÔÊ¾ÏµÍ³×´Ì¬
     snprintf(status_text, sizeof(status_text), "%s", state_str[g_sys_params.state]);
     OLED_ShowString(0, 0, status_text, OLED_8X16);
     
-    // æ˜¾ç¤ºè­¦æŠ¥è®¡æ•°
+    // ÏÔÊ¾±¨¾¯´ÎÊı
     if(g_sys_params.alert_count > 0) {
         snprintf(status_text, sizeof(status_text), "!%d", g_sys_params.alert_count);
         OLED_ShowString(SCREEN_WIDTH-24, 0, status_text, OLED_8X16);
@@ -121,26 +80,7 @@ static void display_status_bar(void) {
 }
 
 /**
- * @brief å¸¦åŠ¨ç”»æ•ˆæœæ˜¾ç¤ºæ•°å€¼
- */
-static void display_value_with_animation(float value, uint8_t x, uint8_t y) {
-    static uint8_t animation_step = 0;
-    char value_str[16];
-    
-    // æ ¹æ®è­¦æŠ¥çº§åˆ«é€‰æ‹©æ˜¾ç¤ºæ•ˆæœ
-    if(g_sys_params.alert == ALERT_CRITICAL) {
-        if(animation_step++ % 2) {
-            // OLED_InvertRectåŠŸèƒ½æš‚æœªå®ç°
-            // OLED_InvertRect(x, y, x+48, y+16);
-        }
-    }
-    
-    snprintf(value_str, sizeof(value_str), "%.1f", value);
-    OLED_ShowString(x, y, value_str, OLED_8X16);
-}
-
-/**
- * @brief åˆå§‹åŒ–ç²’å­æ•ˆæœ
+ * @brief ³õÊ¼»¯Á£×ÓĞ§¹û
  */
 static void init_particles(void) {
     for(int i = 0; i < MAX_PARTICLES; i++) {
@@ -149,17 +89,17 @@ static void init_particles(void) {
 }
 
 /**
- * @brief æ›´æ–°ç²’å­æ•ˆæœ
+ * @brief ¸üĞÂÁ£×ÓĞ§¹û
  */
 static void update_particle_effects(void) {
     static uint32_t last_particle = 0;
     uint32_t current_time = HAL_GetTick();
     
-    // æ¯100msåˆ›å»ºæ–°ç²’å­
+    // Ã¿100ms²úÉúĞÂÁ£×Ó
     if(current_time - last_particle > 100) {
         for(int i = 0; i < MAX_PARTICLES; i++) {
             if(!particles[i].active) {
-                // ä½¿ç”¨(rand() % 21 - 10)ç¡®ä¿èŒƒå›´æ­£å¥½æ˜¯-10åˆ°10
+                // Ê¹ÓÃ(rand() % 21 - 10)È·±£·¶Î§ÕıºÃÊÇ-10µ½10
                 particles[i].x = SCREEN_WIDTH/2 + (rand() % 21 - 10);
                 particles[i].y = SCREEN_HEIGHT/2 + (rand() % 21 - 10);
                 particles[i].dx = (rand() % 3 - 1);
@@ -171,13 +111,13 @@ static void update_particle_effects(void) {
         last_particle = current_time;
     }
     
-    // æ›´æ–°ç²’å­ä½ç½®
+    // ¸üĞÂÁ£×ÓÎ»ÖÃ
     for(int i = 0; i < MAX_PARTICLES; i++) {
         if(particles[i].active) {
             particles[i].x += particles[i].dx;
             particles[i].y += particles[i].dy;
             
-            // æ£€æŸ¥è¾¹ç•Œ
+            // ³¬³ö±ß½ç
             if(particles[i].x < 0 || particles[i].x >= SCREEN_WIDTH ||
                particles[i].y < 0 || particles[i].y >= SCREEN_HEIGHT) {
                 particles[i].active = 0;
@@ -186,462 +126,224 @@ static void update_particle_effects(void) {
             }
         }
     }
+    
+    oled_update_needed = 1; // Á£×ÓĞ§¹û¸üĞÂºóĞèÒªË¢ĞÂÆÁÄ»
 }
 
 /**
- * @brief ç»˜åˆ¶3Dæ¨¡å‹
+ * @brief ÏÔÊ¾3DÄ£ĞÍ£¨Ê¹ÓÃÏß¶ø²»ÊÇµã£©
  */
 static void display_3d_model(void) {
-    // å®šä¹‰ç«‹æ–¹ä½“é¡¶ç‚¹ï¼ˆç§»åˆ°å‡½æ•°å†…éƒ¨ï¼Œå› ä¸ºåªåœ¨è¿™é‡Œä½¿ç”¨ï¼‰
+    // Á¢·½ÌåµÄ¶¥µã£¨ÒÆµ½º¯ÊıÄÚ²¿£¬Ö»ÔÚº¯ÊıÖĞÊ¹ÓÃ£©
     static const Vertex cube_vertices[] = {
-        {-10, -10, -10, 0},  // 0: å·¦ä¸‹å‰
-        {10, -10, -10, 0},   // 1: å³ä¸‹å‰
-        {10, 10, -10, 0},    // 2: å³ä¸Šå‰
-        {-10, 10, -10, 0},   // 3: å·¦ä¸Šå‰
-        {-10, -10, 10, 0},   // 4: å·¦ä¸‹å
-        {10, -10, 10, 0},    // 5: å³ä¸‹å
-        {10, 10, 10, 0},     // 6: å³ä¸Šå
-        {-10, 10, 10, 0}     // 7: å·¦ä¸Šå
+        {-10, -10, -10, 0},  // 0: ×óÏÂÇ°
+        {10, -10, -10, 0},   // 1: ÓÒÏÂÇ°
+        {10, 10, -10, 0},    // 2: ÓÒÉÏÇ°
+        {-10, 10, -10, 0},   // 3: ×óÉÏÇ°
+        {-10, -10, 10, 0},   // 4: ×óÏÂºó
+        {10, -10, 10, 0},    // 5: ÓÒÏÂºó
+        {10, 10, 10, 0},     // 6: ÓÒÉÏºó
+        {-10, 10, 10, 0}     // 7: ×óÉÏºó
     };
     
-    int i;
-    for(i = 0; i < 8; i++) {
-        int x = cube_vertices[i].x + 64;
-        int y = cube_vertices[i].y + 32;
-        OLED_DrawPoint(x, y);
-    }
+    // Ê¹ÓÃÏß»æÖÆÁ¢·½Ìå
+    // Ç°Ãæ
+    int x1, y1, x2, y2;
+    
+    // Á¢·½ÌåÖĞĞÄµãÆ½ÒÆµ½ÆÁÄ»ÖĞĞÄ
+    const int center_x = 64;
+    const int center_y = 32;
+    
+    // Ç°Ãæ
+    x1 = cube_vertices[0].x + center_x; y1 = cube_vertices[0].y + center_y;
+    x2 = cube_vertices[1].x + center_x; y2 = cube_vertices[1].y + center_y;
+    OLED_DrawLine(x1, y1, x2, y2);
+    
+    x1 = cube_vertices[1].x + center_x; y1 = cube_vertices[1].y + center_y;
+    x2 = cube_vertices[2].x + center_x; y2 = cube_vertices[2].y + center_y;
+    OLED_DrawLine(x1, y1, x2, y2);
+    
+    x1 = cube_vertices[2].x + center_x; y1 = cube_vertices[2].y + center_y;
+    x2 = cube_vertices[3].x + center_x; y2 = cube_vertices[3].y + center_y;
+    OLED_DrawLine(x1, y1, x2, y2);
+    
+    x1 = cube_vertices[3].x + center_x; y1 = cube_vertices[3].y + center_y;
+    x2 = cube_vertices[0].x + center_x; y2 = cube_vertices[0].y + center_y;
+    OLED_DrawLine(x1, y1, x2, y2);
+    
+    // ºóÃæ
+    x1 = cube_vertices[4].x + center_x; y1 = cube_vertices[4].y + center_y;
+    x2 = cube_vertices[5].x + center_x; y2 = cube_vertices[5].y + center_y;
+    OLED_DrawLine(x1, y1, x2, y2);
+    
+    x1 = cube_vertices[5].x + center_x; y1 = cube_vertices[5].y + center_y;
+    x2 = cube_vertices[6].x + center_x; y2 = cube_vertices[6].y + center_y;
+    OLED_DrawLine(x1, y1, x2, y2);
+    
+    x1 = cube_vertices[6].x + center_x; y1 = cube_vertices[6].y + center_y;
+    x2 = cube_vertices[7].x + center_x; y2 = cube_vertices[7].y + center_y;
+    OLED_DrawLine(x1, y1, x2, y2);
+    
+    x1 = cube_vertices[7].x + center_x; y1 = cube_vertices[7].y + center_y;
+    x2 = cube_vertices[4].x + center_x; y2 = cube_vertices[4].y + center_y;
+    OLED_DrawLine(x1, y1, x2, y2);
+    
+    // Á¬½ÓÇ°ºóÃæ
+    x1 = cube_vertices[0].x + center_x; y1 = cube_vertices[0].y + center_y;
+    x2 = cube_vertices[4].x + center_x; y2 = cube_vertices[4].y + center_y;
+    OLED_DrawLine(x1, y1, x2, y2);
+    
+    x1 = cube_vertices[1].x + center_x; y1 = cube_vertices[1].y + center_y;
+    x2 = cube_vertices[5].x + center_x; y2 = cube_vertices[5].y + center_y;
+    OLED_DrawLine(x1, y1, x2, y2);
+    
+    x1 = cube_vertices[2].x + center_x; y1 = cube_vertices[2].y + center_y;
+    x2 = cube_vertices[6].x + center_x; y2 = cube_vertices[6].y + center_y;
+    OLED_DrawLine(x1, y1, x2, y2);
+    
+    x1 = cube_vertices[3].x + center_x; y1 = cube_vertices[3].y + center_y;
+    x2 = cube_vertices[7].x + center_x; y2 = cube_vertices[7].y + center_y;
+    OLED_DrawLine(x1, y1, x2, y2);
+    
+    oled_update_needed = 1; // ±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
 }
 
 /**
- * @brief æ˜¾ç¤ºå‹åŠ›æ¡å½¢å›¾
+ * @brief ÏÔÊ¾Ñ¹Á¦ÌõĞÎÍ¼
  */
 static void display_pressure_bars(void) {
     int i;
     char buf[32];
     for(i = 0; i < 6; i++) {
         int bar_height = (int)(g_process_params.pressure[i] * 20.0f);
-        // ç»˜åˆ¶å‹åŠ›æ¡
+        // ÏÔÊ¾Ñ¹Á¦Ìõ
         OLED_DrawLine(10 + i*20, 63-bar_height, 10 + i*20, 63);
         OLED_DrawLine(10 + i*20, 63, 25 + i*20, 63);
         OLED_DrawLine(25 + i*20, 63, 25 + i*20, 63-bar_height);
         OLED_DrawLine(10 + i*20, 63-bar_height, 25 + i*20, 63-bar_height);
         
-        // æ˜¾ç¤ºå‹åŠ›å€¼
+        // ÏÔÊ¾Ñ¹Á¦Öµ
         snprintf(buf, sizeof(buf), "%.1f", g_process_params.pressure[i]);
         OLED_ShowString(8 + i*20, 52, buf, 12);
     }
 }
 
 /**
- * @brief æ˜¾ç¤ºæ¸©åº¦è®¡
+ * @brief ÏÔÊ¾ÎÂ¶È¼Æ
  */
 static void display_temperature(void) {
     const uint8_t x = SCREEN_WIDTH - 20;
     const uint8_t y = 10;
     const uint8_t height = 40;
     
-    // æ¸©åº¦è®¡å¤–æ¡†
+    // ÎÂ¶È¼Æ
     OLED_DrawLine(x, y, x+10, y);
     OLED_DrawLine(x, y, x, y+height);
     OLED_DrawLine(x+10, y, x+10, y+height);
     OLED_DrawLine(x, y+height, x+10, y+height);
     
-    // æ¸©åº¦æ¶²æŸ± - ç¡®ä¿æµ®ç‚¹æ•°è¿ç®—
+    // ÎÂ¶ÈÒº - È·±£ÏßĞÔ¹ØÏµ
     uint8_t temp_height = (uint8_t)(((float)g_process_params.temperature / MAX_TEMPERATURE) * height);
     for(uint8_t i = 0; i < temp_height; i++) {
         OLED_DrawLine(x+2, y+height-i, x+8, y+height-i);
     }
     
-    // æ˜¾ç¤ºæ¸©åº¦å€¼
+    // ÏÔÊ¾ÎÂ¶ÈÖµ
     OLED_Printf(x-30, y, OLED_8X16, "%.1fC", g_process_params.temperature);
 }
 
 /**
- * @brief æ˜¾ç¤ºè¿›åº¦æ¡
+ * @brief ÏÔÊ¾½ø¶ÈÌõ
  */
 static void display_progress(void) {
     const uint8_t progress_width = 100;
     const uint8_t y = SCREEN_HEIGHT - 10;
     
-    // è¿›åº¦æ¡å¤–æ¡†
+    // ÏÔÊ¾½ø¶ÈÌõ
     OLED_DrawLine(14, y-8, 114, y-8);
     OLED_DrawLine(14, y, 114, y);
     OLED_DrawLine(14, y-8, 14, y);
     OLED_DrawLine(114, y-8, 114, y);
     
-    // è¿›åº¦å¡«å…… - ç¡®ä¿æµ®ç‚¹æ•°è¿ç®—
+    // ½ø¶È - È·±£ÏßĞÔ¹ØÏµ
     uint8_t fill_width = (uint8_t)(((float)g_process_params.progress / 100.0f) * progress_width);
     for(uint8_t i = 0; i < fill_width; i++) {
         OLED_DrawLine(14+i, y-7, 14+i, y-1);
     }
     
-    // æ˜¾ç¤ºç™¾åˆ†æ¯” - å¯æ˜¾ç¤ºå°æ•°ç‚¹
+    // ÏÔÊ¾°Ù·Ö±È - ÏÔÊ¾Ğ¡Êı
     OLED_Printf(70, y-7, OLED_8X16, "%.1f%%", g_process_params.progress);
 }
 
 /**
- * @brief åˆ‡æ¢å¤œé—´æ¨¡å¼
+ * @brief ÏÔÊ¾×´Ì¬¾¯¸æĞ§¹û
  */
-static void toggle_night_mode(void) {
-    static DisplayMode mode = DISPLAY_MODE_NORMAL;
-    mode = (mode == DISPLAY_MODE_NIGHT) ? DISPLAY_MODE_NORMAL : DISPLAY_MODE_NIGHT;
-    
-    // OLEDå¯¹æ¯”åº¦æ§åˆ¶åŠŸèƒ½æš‚æœªå®ç°
-    /*if(mode == DISPLAY_MODE_NIGHT) {
-        OLED_SetContrast(0x20); // é™ä½äº®åº¦
-    } else {
-        OLED_SetContrast(0xFF); // æ¢å¤æ­£å¸¸äº®åº¦
-    }*/
-}
-
-/**
- * @brief è­¦å‘Šæ•ˆæœæ˜¾ç¤º
- */
+#if 0
 static void show_warning_effect(void) {
-    // å®ç°è­¦å‘Šæ•ˆæœçš„ä»£ç 
-    // æš‚æ—¶ç•™ç©ºï¼Œå®é™…å¯ä»¥å®ç°é—ªçƒæˆ–å£°éŸ³æç¤º
+    // ÊµÏÖ×´Ì¬¾¯¸æĞ§¹ûµÄ´úÂë
+    // ÔİÊ±ÑÓ³Ù£¬Êµ¼Ê¿ÉÒÔÊµÏÖ¾¯¸æĞ§¹ûÏÔÊ¾
 }
+#endif
 
 /**
- * @brief  ä¸»èœå•ç•Œé¢
- * @retval int è¿”å›å€¼è¯´æ˜
+ * @brief  Ö÷²Ëµ¥Èë¿Ú
+ * @retval int ·µ»ØÖµËµÃ÷
  */
 int menu1(void)
 {
     uint8_t select = 0;
-    // åœ¨å‡½æ•°å†…éƒ¨å®šä¹‰èœå•é¡¹
+    // ÔÚº¯ÊıÄÚ²¿¶¨Òå²Ëµ¥Ïî
     static const MenuItem items[] = {
-        {"å·¥è‰ºç›‘æ§", menu_process},
-        {"å‚æ•°è®¾ç½®", menu2},
-        {"å†å²è®°å½•", menu_history}
+        {"¹¤ÒÕ¼à¿Ø", menu_process},
+        {"²ÎÊıÉèÖÃ", menu2},
+        {"ÀúÊ·¼ÇÂ¼", menu_history}
     };
     uint8_t count = sizeof(items) / sizeof(items[0]);
     
-    // åˆå§‹åŒ–ç²’å­æ•ˆæœ - åªåœ¨ä¸»èœå•éœ€è¦è°ƒç”¨ä¸€æ¬¡
-    init_particles();
+    // ³õÊ¼»¯Á£×ÓĞ§¹û - Ö»ÔÚÖ÷²Ëµ¥ĞèÒªµ÷ÓÃÒ»´Î
+    static uint8_t particles_initialized = 0;
+    if (!particles_initialized) {
+        init_particles();
+        particles_initialized = 1;
+    }
+    
+    // Ê×´Î½øÈëÊ±±ê¼ÇĞèÒª¸üĞÂ
+    oled_update_needed = 1;
     
     while(1)
     {
-        KeyNum = Key_GetNum();
-        
-        switch(KeyNum)
-        {
-            case 1: // ä¸Š
-                select = (select > 0) ? (select - 1) : (count - 1);
-                break;
-                
-            case 2: // ä¸‹
-                select = (select < (count - 1)) ? (select + 1) : 0;
-                break;
-                
-            case 3: // ç¡®è®¤
-                OLED_Clear();
-                OLED_Update();
-                return items[select].handler();
+        if (oled_update_needed) {
+            display_menu_items(items, count, select);
+            // display_menu_itemsÒÑ¾­µ÷ÓÃÁËOLED_Update²¢ÖØÖÃ±êÖ¾Î»
         }
         
-        display_menu_items(items, count, select);
-    }
-}
-
-/**
- * @brief  å·¥è‰ºè¿‡ç¨‹ç•Œé¢
- * @retval int è¿”å›å€¼è¯´æ˜
- */
-int menu_process(void)
-{
-    while(1)
-    {
-        KeyNum = Key_GetNum();
-        if(KeyNum == 4) return menu1();
-        
-        OLED_Clear();
-        
-        // æ˜¾ç¤ºçŠ¶æ€æ 
-        display_status_bar();
-        
-        // æ˜¾ç¤º3Dæ¨¡å‹
-        display_3d_model();
-        
-        // æ˜¾ç¤ºå‹åŠ›æ¡å½¢å›¾
-        display_pressure_bars();
-        
-        // æ˜¾ç¤ºæ¸©åº¦
-        display_temperature();
-        
-        // æ˜¾ç¤ºè¿›åº¦
-        display_progress();
-        
-        // æ›´æ–°ç²’å­æ•ˆæœ
-        update_particle_effects();
-        
-        OLED_Update();
-    }
-}
-
-/**
- * @brief  å‚æ•°è®¾ç½®ç•Œé¢
- * @note   é€‰æ‹©è¦è®¾ç½®çš„å‚æ•°ç±»å‹
- * @retval int è¿”å›å€¼è¯´æ˜
- */
-int menu2(void)
-{
-    uint8_t select = 0;
-    // åœ¨å‡½æ•°å†…éƒ¨å®šä¹‰èœå•é¡¹
-    static const MenuItem main_menu_items[] = {
-        {"å‹åŠ›è®¾ç½®", menu3_PressureSet},
-        {"æ¸©åº¦è®¾ç½®", menu3_TemperatureSet},
-        {"æ—¶é—´è®¾ç½®", menu3_TimeSet},
-        {"å·¥è‰ºé€‰æ‹©", menu3_ProcessSelect},
-        {"æ•°æ®è®°å½•", menu3_DataRecord},
-        {"ç³»ç»Ÿé…ç½®", menu3_SystemConfig},
-        {"ç”µæœºçŠ¶æ€", menu_motor_status}
-    };
-    uint8_t count = sizeof(main_menu_items) / sizeof(main_menu_items[0]);
-    
-    while(1)
-    {
         KeyNum = Key_GetNum();
         
         switch(KeyNum)
         {
-            case 1: // ä¸Š
+            case 1: // ÉÏ
                 select = (select > 0) ? (select - 1) : (count - 1);
+                oled_update_needed = 1; // ±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
                 break;
                 
-            case 2: // ä¸‹
+            case 2: // ÏÂ
                 select = (select < (count - 1)) ? (select + 1) : 0;
+                oled_update_needed = 1; // ±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
                 break;
                 
-            case 3: // ç¡®è®¤
-                OLED_Clear();
-                OLED_Update();
-                return main_menu_items[select].handler();
-                
-            case 4: // è¿”å›
-                OLED_Clear();
-                OLED_Update();
-                return menu1();
-        }
-        
-        // æ˜¾ç¤ºèœå•é¡¹
-        display_menu_items(main_menu_items, count, select);
-    }
-}
-
-/**
- * @brief  è®¾ç½®èœå•ç•Œé¢
- * @retval int è¿”å›å€¼è¯´æ˜
- */
-int menu_settings(void)
-{
-    uint8_t select = 0;
-    // åœ¨å‡½æ•°å†…éƒ¨å®šä¹‰èœå•é¡¹
-    static const MenuItem settings_items[] = {
-        {"æ˜¾ç¤ºè®¾ç½®", NULL},
-        {"å£°éŸ³è®¾ç½®", NULL},
-        {"è¯­è¨€è®¾ç½®", NULL},
-        {"å…³äºç³»ç»Ÿ", menu4_SystemInfo}
-    };
-    uint8_t count = sizeof(settings_items) / sizeof(settings_items[0]);
-    
-    while(1)
-    {
-        KeyNum = Key_GetNum();
-        
-        switch(KeyNum)
-        {
-            case 1: // ä¸Š
-                select = (select > 0) ? (select - 1) : (count - 1);
-                break;
-                
-            case 2: // ä¸‹
-                select = (select < (count - 1)) ? (select + 1) : 0;
-                break;
-                
-            case 3: // ç¡®è®¤
-                if(settings_items[select].handler != NULL) {
-                    return settings_items[select].handler();
+            case 3: // È·ÈÏ
+                if(items[select].handler != NULL) {
+                    items[select].handler(); // Ö±½Óµ÷ÓÃ£¬²»Ê¹ÓÃreturn
+                    oled_update_needed = 1; // ·µ»ØÊ±±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
                 }
                 break;
-                
-            case 4: // è¿”å›
-                return menu1();
         }
-        
-        display_menu_items(settings_items, count, select);
     }
 }
 
 /**
- * @brief  å†å²è®°å½•èœå•ç•Œé¢
- * @retval int è¿”å›å€¼è¯´æ˜
- */
-int menu_history(void)
-{
-    uint8_t select = 0;
-    // åœ¨å‡½æ•°å†…éƒ¨å®šä¹‰èœå•é¡¹
-    static const MenuItem history_items[] = {
-        {"è®°å½• 1", NULL},
-        {"è®°å½• 2", NULL},
-        {"è®°å½• 3", NULL},
-        {"å¯¼å‡ºæ•°æ®", NULL}
-    };
-    uint8_t count = sizeof(history_items) / sizeof(history_items[0]);
-    
-    while(1)
-    {
-        KeyNum = Key_GetNum();
-        
-        switch(KeyNum)
-        {
-            case 1: // ä¸Š
-                select = (select > 0) ? (select - 1) : (count - 1);
-                break;
-                
-            case 2: // ä¸‹
-                select = (select < (count - 1)) ? (select + 1) : 0;
-                break;
-                
-            case 3: // ç¡®è®¤
-                if(history_items[select].handler != NULL) {
-                    // å†å²è®°å½•åŠŸèƒ½æš‚æœªå®ç°
-                    OLED_Clear();
-                    OLED_ShowString(0, 0, "å†å²è®°å½•", OLED_8X16);
-                    OLED_ShowString(0, 16, "åŠŸèƒ½æœªå®ç°", OLED_8X16);
-                    OLED_Update();
-                    HAL_Delay(1000);
-                }
-                break;
-                
-            case 4: // è¿”å›
-                return menu1();
-        }
-        
-        display_menu_items(history_items, count, select);
-    }
-}
-
-/**
- * @brief  ä¸»èœå•ç•Œé¢ - è€æ¥å£ï¼Œä¿æŒå…¼å®¹æ€§
- * @retval int è¿”å›å€¼è¯´æ˜
- */
-int menu_main(void)
-{
-    // ä¸ºå…¼å®¹ä¿ç•™ï¼Œå®é™…è°ƒç”¨menu1
-    return menu1();
-}
-
-/**
- * @brief  å·¥è‰ºé€‰æ‹©ç•Œé¢
- * @retval int è¿”å›å€¼è¯´æ˜
- */
-int menu3_ProcessSelect(void)
-{
-    uint8_t select = 0;
-    // åœ¨å‡½æ•°å†…éƒ¨å®šä¹‰èœå•é¡¹
-    static const MenuItem process_items[] = {
-        {"å·¥è‰º 1", menu4_Process1},
-        {"å·¥è‰º 2", menu4_Process2},
-        {"å·¥è‰º 3", menu4_Process3},
-        {"è‡ªå®šä¹‰", NULL}
-    };
-    uint8_t count = sizeof(process_items) / sizeof(process_items[0]);
-    
-    while(1)
-    {
-        KeyNum = Key_GetNum();
-        
-        switch(KeyNum)
-        {
-            case 1: // ä¸Š
-                select = (select > 0) ? (select - 1) : (count - 1);
-                break;
-                
-            case 2: // ä¸‹
-                select = (select < (count - 1)) ? (select + 1) : 0;
-                break;
-                
-            case 3: // ç¡®è®¤
-                if(process_items[select].handler != NULL) {
-                    return process_items[select].handler();
-                }
-                break;
-                
-            case 4: // è¿”å›
-                return menu2();
-        }
-        
-        display_menu_items(process_items, count, select);
-    }
-}
-
-/**
- * @brief  ç³»ç»Ÿè®¾ç½®ç•Œé¢
- * @retval int è¿”å›å€¼è¯´æ˜
- */
-int menu3_SystemConfig(void)
-{
-    uint8_t select = 0;
-    // åœ¨å‡½æ•°å†…éƒ¨å®šä¹‰èœå•é¡¹
-    static const MenuItem config_items[] = {
-        {"å‹åŠ›æ ¡å‡†", menu4_CalibrationP},
-        {"æ¸©åº¦æ ¡å‡†", menu4_CalibrationT},
-        {"æŠ¥è­¦è®¾ç½®", menu4_AlarmConfig},
-        {"ç³»ç»Ÿä¿¡æ¯", menu4_SystemInfo}
-    };
-    uint8_t count = sizeof(config_items) / sizeof(config_items[0]);
-    
-    while(1)
-    {
-        KeyNum = Key_GetNum();
-        
-        switch(KeyNum)
-        {
-            case 1: // ä¸Š
-                select = (select > 0) ? (select - 1) : (count - 1);
-                break;
-                
-            case 2: // ä¸‹
-                select = (select < (count - 1)) ? (select + 1) : 0;
-                break;
-                
-            case 3: // ç¡®è®¤
-                if(config_items[select].handler != NULL) {
-                    return config_items[select].handler();
-                }
-                break;
-                
-            case 4: // è¿”å›
-                return menu2();
-        }
-        
-        display_menu_items(config_items, count, select);
-    }
-}
-
-/**
- * @brief  æ•°æ®è®°å½•ç•Œé¢
- * @retval int è¿”å›å€¼è¯´æ˜
- */
-int menu3_DataRecord(void)
-{
-    // æ•°æ®è®°å½•åŠŸèƒ½å¾…å®ç°
-    OLED_Clear();
-    OLED_ShowString(0, 0, "æ•°æ®è®°å½•", OLED_8X16);
-    OLED_ShowString(0, 16, "åŠŸèƒ½æœªå®ç°", OLED_8X16);
-    OLED_Update();
-    
-    while(1)
-    {
-        KeyNum = Key_GetNum();
-        if(KeyNum == 4) return menu2();
-    }
-}
-
-/**
- * @brief  å‹åŠ›è®¾ç½®ç•Œé¢
- * @retval int è¿”å›å€¼è¯´æ˜
+ * @brief  Ñ¹Á¦ÉèÖÃ²Ëµ¥Èë¿Ú
+ * @retval int ·µ»ØÖµËµÃ÷
  */
 int menu3_PressureSet(void)
 {
@@ -654,41 +356,41 @@ int menu3_PressureSet(void)
         
         switch(KeyNum)
         {
-            case 1: // å¢åŠ 
+            case 1: // ÉÏ
                 pressure += (select == 0) ? 1.0f : 0.1f;
                 if(pressure > MAX_PRESSURE) pressure = MAX_PRESSURE;
                 break;
                 
-            case 2: // å‡å°
+            case 2: // ÏÂ
                 pressure -= (select == 0) ? 1.0f : 0.1f;
                 if(pressure < 0) pressure = 0;
                 break;
                 
-            case 3: // åˆ‡æ¢æ•´æ•°/å°æ•°
+            case 3: // ÇĞ»»µ¥Î»
                 select = !select;
                 break;
                 
-            case 4: // è¿”å›
-                return menu2();
+            case 4: // ·µ»Ø
+                return 0; // Ö±½Ó·µ»Ø0£¬²»µ÷ÓÃÉÏÒ»¼¶º¯Êı
                 
-            case 5: // ç¡®è®¤è®¾ç½®
+            case 5: // È·ÈÏÉèÖÃ
                 if(Set_Pressure(pressure) == PRESSURE_OK) {
-                    return menu2();
+                    return 0; // Ö±½Ó·µ»Ø0£¬²»µ÷ÓÃÉÏÒ»¼¶º¯Êı
                 }
                 break;
         }
         
         OLED_Clear();
-        OLED_ShowString(0, 0, "è®¾ç½®å‹åŠ›:", OLED_8X16);
+        OLED_ShowString(0, 0, "ÉèÖÃÑ¹Á¦:", OLED_8X16);
         OLED_Printf(0, 16, OLED_8X16, "%.1f GPa", pressure);
-        OLED_ShowString(0, 32, select ? "ç²¾ç»†è°ƒèŠ‚" : "ç²—ç•¥è°ƒèŠ‚", OLED_8X16);
-        OLED_Update();
+        OLED_ShowString(0, 32, select ? "¸ß¾«¶È" : "µÍ¾«¶È", OLED_8X16);
+        OLED_Update(); // Ã¿´Î²ÎÊı±ä»¯ºóÖ±½Ó¸üĞÂÏÔÊ¾
     }
 }
 
 /**
- * @brief  æ¸©åº¦è®¾ç½®ç•Œé¢
- * @retval int è¿”å›å€¼è¯´æ˜
+ * @brief  ÎÂ¶ÈÉèÖÃ²Ëµ¥Èë¿Ú
+ * @retval int ·µ»ØÖµËµÃ÷
  */
 int menu3_TemperatureSet(void)
 {
@@ -701,41 +403,41 @@ int menu3_TemperatureSet(void)
         
         switch(KeyNum)
         {
-            case 1: // å¢åŠ 
+            case 1: // ÉÏ
                 temperature += (select == 0) ? 10.0f : 1.0f;
                 if(temperature > MAX_TEMPERATURE) temperature = MAX_TEMPERATURE;
                 break;
                 
-            case 2: // å‡å°
+            case 2: // ÏÂ
                 temperature -= (select == 0) ? 10.0f : 1.0f;
                 if(temperature < 0) temperature = 0;
                 break;
                 
-            case 3: // åˆ‡æ¢æ•´æ•°/å°æ•°
+            case 3: // ÇĞ»»µ¥Î»
                 select = !select;
                 break;
                 
-            case 4: // è¿”å›
-                return menu2();
+            case 4: // ·µ»Ø
+                return 0; // Ö±½Ó·µ»Ø0£¬²»µ÷ÓÃÉÏÒ»¼¶º¯Êı
                 
-            case 5: // ç¡®è®¤è®¾ç½®
+            case 5: // È·ÈÏÉèÖÃ
                 if(Set_Temperature(temperature) == TEMP_OK) {
-                    return menu2();
+                    return 0; // Ö±½Ó·µ»Ø0£¬²»µ÷ÓÃÉÏÒ»¼¶º¯Êı
                 }
                 break;
         }
         
         OLED_Clear();
-        OLED_ShowString(0, 0, "è®¾ç½®æ¸©åº¦:", OLED_8X16);
+        OLED_ShowString(0, 0, "ÉèÖÃÎÂ¶È:", OLED_8X16);
         OLED_Printf(0, 16, OLED_8X16, "%.1f C", temperature);
-        OLED_ShowString(0, 32, select ? "ç²¾ç»†è°ƒèŠ‚" : "ç²—ç•¥è°ƒèŠ‚", OLED_8X16);
-        OLED_Update();
+        OLED_ShowString(0, 32, select ? "¸ß¾«¶È" : "µÍ¾«¶È", OLED_8X16);
+        OLED_Update(); // Ã¿´Î²ÎÊı±ä»¯ºóÖ±½Ó¸üĞÂÏÔÊ¾
     }
 }
 
 /**
- * @brief  æ—¶é—´è®¾ç½®ç•Œé¢
- * @retval int è¿”å›å€¼è¯´æ˜
+ * @brief  Ê±¼äÉèÖÃ²Ëµ¥Èë¿Ú
+ * @retval int ·µ»ØÖµËµÃ÷
  */
 int menu3_TimeSet(void)
 {
@@ -748,7 +450,7 @@ int menu3_TimeSet(void)
         
         switch(KeyNum)
         {
-            case 1: // å¢åŠ 
+            case 1: // ÉÏ
                 if(select == 0) {
                     hours = (hours + 1) % 24;
                 } else {
@@ -756,7 +458,7 @@ int menu3_TimeSet(void)
                 }
                 break;
                 
-            case 2: // å‡å°
+            case 2: // ÏÂ
                 if(select == 0) {
                     hours = (hours > 0) ? (hours - 1) : 23;
                 } else {
@@ -764,176 +466,771 @@ int menu3_TimeSet(void)
                 }
                 break;
                 
-            case 3: // åˆ‡æ¢æ—¶/åˆ†
+            case 3: // ÇĞ»»µ¥Î»
                 select = !select;
                 break;
                 
-            case 4: // è¿”å›
-                return menu2();
+            case 4: // ·µ»Ø
+                return 0; // Ö±½Ó·µ»Ø0£¬²»µ÷ÓÃÉÏÒ»¼¶º¯Êı
                 
-            case 5: // ç¡®è®¤è®¾ç½®
-                // è®¾ç½®æ—¶é—´çš„ä»£ç å¾…å®ç°
-                return menu2();
+            case 5: // È·ÈÏÉèÖÃ
+                // Ê±¼äÉèÖÃµÄÂß¼­ÊµÏÖ
+                return 0; // Ö±½Ó·µ»Ø0£¬²»µ÷ÓÃÉÏÒ»¼¶º¯Êı
         }
         
         OLED_Clear();
-        OLED_ShowString(0, 0, "è®¾ç½®æ—¶é—´:", OLED_8X16);
+        OLED_ShowString(0, 0, "ÉèÖÃÊ±¼ä:", OLED_8X16);
         OLED_Printf(0, 16, OLED_8X16, "%02d:%02d", hours, minutes);
-        OLED_ShowString(0, 32, select ? "è®¾ç½®åˆ†é’Ÿ" : "è®¾ç½®å°æ—¶", OLED_8X16);
-        OLED_Update();
+        OLED_ShowString(0, 32, select ? "ÉèÖÃ·ÖÖÓ" : "ÉèÖÃĞ¡Ê±", OLED_8X16);
+        OLED_Update(); // Ã¿´Î²ÎÊı±ä»¯ºóÖ±½Ó¸üĞÂÏÔÊ¾
     }
 }
 
 /**
- * @brief  å·¥è‰º1å‚æ•°è®¾ç½®
- * @retval int è¿”å›å€¼è¯´æ˜
+ * @brief  ¹¤ÒÕ¹ı³Ì½çÃæ - Æô¶¯ºÍ¼à¿Ø¹¤ÒÕÈ«Á÷³Ì
+ * @retval int ·µ»ØÖµËµÃ÷
+ */
+int menu_process(void)
+{
+    // ¹¤ÒÕ½×¶Î¶¨Òå
+    typedef enum {
+        STAGE_READY,     // ×¼±¸½×¶Î
+        STAGE_HEAT,      // ¼ÓÈÈ½×¶Î
+        STAGE_PRESS,     // ¼ÓÑ¹½×¶Î
+        STAGE_HOLD,      // ±£³Ö½×¶Î
+        STAGE_COOL,      // ÀäÈ´½×¶Î
+        STAGE_COMPLETE   // Íê³É½×¶Î
+    } ProcessStage;
+    
+    // ÏµÍ³×´Ì¬¶¨Òå - ÓëÈ«¾Ö×´Ì¬¶¨Òå±£³ÖÒ»ÖÂ
+    ProcessStage current_stage = STAGE_READY;
+    uint32_t stage_start_time = 0;
+    uint32_t stage_duration[] = {0, 10000, 15000, 20000, 10000, 0}; // ¸÷½×¶Î³ÖĞøÊ±¼ä(ms)
+    float target_temperature = 200.0f; // Ä¿±êÎÂ¶È
+    float target_pressure = 5.0f;      // Ä¿±êÑ¹Á¦
+    float current_temperature = 25.0f;  // µ±Ç°ÎÂ¶È
+    float current_pressure = 0.0f;      // µ±Ç°Ñ¹Á¦
+    uint8_t motors_running = 0;         // µç»úÔËĞĞ×´Ì¬
+    uint8_t process_confirmed = 0;      // ¹¤ÒÕÈ·ÈÏ±êÖ¾
+    
+    // Ê×´Î½øÈëÊ±±ê¼ÇĞèÒª¸üĞÂ
+    oled_update_needed = 1;
+    
+    // ÇåÆÁ²¢ÏÔÊ¾»¶Ó­½çÃæ
+    OLED_Clear();
+    OLED_ShowString(0, 0, "ÁùÃæ¶¥¹¤ÒÕ¿ØÖÆ", OLED_8X16);
+    OLED_ShowString(0, 16, "°´¼ü3: Æô¶¯¹¤ÒÕ", OLED_8X16);
+    OLED_ShowString(0, 32, "°´¼ü4: ·µ»Ø", OLED_8X16);
+    OLED_ShowString(0, 48, "°´¼ü5: ½ô¼±Í£Ö¹", OLED_8X16);
+    OLED_Update();
+    
+    while(1)
+    {
+        KeyNum = Key_GetNum();
+        
+        switch(KeyNum)
+        {
+            case 3: // Æô¶¯/È·ÈÏ
+                if(current_stage == STAGE_READY && !process_confirmed) {
+                    // È·ÈÏÆô¶¯¹¤ÒÕ
+                    process_confirmed = 1;
+                    OLED_Clear();
+                    OLED_ShowString(0, 0, "È·ÈÏÆô¶¯¹¤ÒÕ", OLED_8X16);
+                    OLED_ShowString(0, 16, "°´¼ü3: È·ÈÏ", OLED_8X16);
+                    OLED_ShowString(0, 32, "°´¼ü4: È¡Ïû", OLED_8X16);
+                    OLED_Update();
+                } 
+                else if(current_stage == STAGE_READY && process_confirmed) {
+                    // ÕıÊ½Æô¶¯¹¤ÒÕÁ÷³Ì
+                    current_stage = STAGE_HEAT;
+                    stage_start_time = HAL_GetTick();
+                    g_sys_params.state = PROCESS_HEATING; // ¸üĞÂÏµÍ³×´Ì¬
+                    
+                    // Æô¶¯ËùÓĞµç»ú
+                    for(uint8_t i = 0; i < 3; i++) {
+                        Motor_SetDir(i, DIR_CW);     // ÉèÖÃ·½ÏòÎªË³Ê±Õë
+                        Motor_SetSpeed(i, 100);      // ÉèÖÃ³õÊ¼ËÙ¶È
+                        Motor_Run(i);                // Æô¶¯µç»ú
+                    }
+                    motors_running = 1;
+                    
+                    // ¸üĞÂ½ø¶ÈÌõ³õÊ¼Öµ
+                    g_process_params.progress = 0.0f;
+                }
+                break;
+                
+            case 4: // ·µ»Ø
+                if(process_confirmed && current_stage == STAGE_READY) {
+                    // È¡ÏûÈ·ÈÏ£¬·µ»Ø×¼±¸×´Ì¬
+                    process_confirmed = 0;
+                    oled_update_needed = 1;
+                } else if(!motors_running || current_stage == STAGE_COMPLETE) {
+                    // Èç¹ûµç»úÎ´ÔËĞĞ»ò¹¤ÒÕÒÑÍê³É£¬Ôò¿ÉÒÔ°²È«·µ»Ø
+                    return 0; // Ö±½Ó·µ»Ø0£¬²»µ÷ÓÃÉÏÒ»¼¶º¯Êı
+                } else {
+                    // ÌáÊ¾ÓÃ»§¹¤ÒÕÕıÔÚ½øĞĞÖĞ
+                    OLED_Clear();
+                    OLED_ShowString(0, 0, "¹¤ÒÕÕıÔÚ½øĞĞÖĞ", OLED_8X16);
+                    OLED_ShowString(0, 16, "ÇëÏÈ½ô¼±Í£Ö¹", OLED_8X16);
+                    OLED_Update();
+                    HAL_Delay(1500);
+                    oled_update_needed = 1;
+                }
+                break;
+                
+            case 5: // ½ô¼±Í£Ö¹
+                if(motors_running) {
+                    // ½ô¼±Í£Ö¹ËùÓĞµç»ú
+                    Motor_EmergencyStop();
+                    motors_running = 0;
+                    
+                    // ÏÔÊ¾Í£Ö¹ĞÅÏ¢
+                    OLED_Clear();
+                    OLED_ShowString(0, 0, "½ô¼±Í£Ö¹", OLED_8X16);
+                    OLED_ShowString(0, 16, "ËùÓĞµç»úÒÑÍ£Ö¹", OLED_8X16);
+                    OLED_Update();
+                    HAL_Delay(1500);
+                    
+                    // ·µ»Ø×¼±¸×´Ì¬
+                    current_stage = STAGE_READY;
+                    g_sys_params.state = PROCESS_IDLE;
+                    process_confirmed = 0;
+                    oled_update_needed = 1;
+                }
+                break;
+        }
+        
+        // ¸ù¾İµ±Ç°¹¤ÒÕ½×¶ÎÖ´ĞĞÏàÓ¦µÄÂß¼­
+        if(motors_running) {
+            uint32_t current_time = HAL_GetTick();
+            uint32_t elapsed_time = current_time - stage_start_time;
+            
+            // ½×¶Î×ª»»Âß¼­
+            switch(current_stage) {
+                case STAGE_HEAT:
+                    // Ä£ÄâÎÂ¶ÈÉÏÉı
+                    current_temperature = 25.0f + (target_temperature - 25.0f) * 
+                                         ((float)elapsed_time / stage_duration[STAGE_HEAT]);
+                    
+                    // ¸üĞÂ½ø¶È
+                    g_process_params.progress = (float)elapsed_time / stage_duration[STAGE_HEAT] * 25.0f;
+                    
+                    // ½×¶ÎÊ±¼äµ½£¬»òÕßÎÂ¶È´ïµ½Ä¿±êÖµ£¬½øÈëÏÂÒ»½×¶Î
+                    if(elapsed_time >= stage_duration[STAGE_HEAT] || 
+                       current_temperature >= target_temperature) {
+                        current_stage = STAGE_PRESS;
+                        stage_start_time = current_time;
+                        g_sys_params.state = PROCESS_PRESSING;
+                        
+                        // ÎÂ¶È´ïµ½Ä¿±ê£¬µ÷Õûµç»úËÙ¶È
+                        for(uint8_t i = 0; i < 3; i++) {
+                            Motor_SetSpeed(i, 500); // Ôö¼ÓËÙ¶È
+                        }
+                    }
+                    break;
+                    
+                case STAGE_PRESS:
+                    // Ä£ÄâÑ¹Á¦ÉÏÉı
+                    current_pressure = 0.0f + (target_pressure - 0.0f) * 
+                                      ((float)elapsed_time / stage_duration[STAGE_PRESS]);
+                    
+                    // ±£³ÖÎÂ¶È
+                    current_temperature = target_temperature;
+                    
+                    // ¸üĞÂ½ø¶È
+                    g_process_params.progress = 25.0f + 
+                                              (float)elapsed_time / stage_duration[STAGE_PRESS] * 25.0f;
+                    
+                    // ½×¶ÎÊ±¼äµ½£¬»òÕßÑ¹Á¦´ïµ½Ä¿±êÖµ£¬½øÈëÏÂÒ»½×¶Î
+                    if(elapsed_time >= stage_duration[STAGE_PRESS] || 
+                       current_pressure >= target_pressure) {
+                        current_stage = STAGE_HOLD;
+                        stage_start_time = current_time;
+                        g_sys_params.state = PROCESS_TRANSFORM;
+                    }
+                    break;
+                    
+                case STAGE_HOLD:
+                    // ±£³ÖÎÂ¶ÈºÍÑ¹Á¦
+                    current_temperature = target_temperature;
+                    current_pressure = target_pressure;
+                    
+                    // ¸üĞÂ½ø¶È
+                    g_process_params.progress = 50.0f + 
+                                              (float)elapsed_time / stage_duration[STAGE_HOLD] * 25.0f;
+                    
+                    // ½×¶ÎÊ±¼äµ½£¬½øÈëÏÂÒ»½×¶Î
+                    if(elapsed_time >= stage_duration[STAGE_HOLD]) {
+                        current_stage = STAGE_COOL;
+                        stage_start_time = current_time;
+                        g_sys_params.state = PROCESS_COOLING;
+                        
+                        // ½øÈëÀäÈ´½×¶Î£¬µ÷Õûµç»úËÙ¶È
+                        for(uint8_t i = 0; i < 3; i++) {
+                            Motor_SetSpeed(i, 100); // ½µµÍËÙ¶È
+                        }
+                    }
+                    break;
+                    
+                case STAGE_COOL:
+                    // Ä£ÄâÎÂ¶ÈÏÂ½µ£¬±£³ÖÑ¹Á¦
+                    current_temperature = target_temperature - (target_temperature - 25.0f) * 
+                                         ((float)elapsed_time / stage_duration[STAGE_COOL]);
+                    current_pressure = target_pressure;
+                    
+                    // ¸üĞÂ½ø¶È
+                    g_process_params.progress = 75.0f + 
+                                              (float)elapsed_time / stage_duration[STAGE_COOL] * 25.0f;
+                    
+                    // ½×¶ÎÊ±¼äµ½£¬»òÕßÎÂ¶È½µµ½³õÊ¼Öµ£¬Íê³É¹¤ÒÕ
+                    if(elapsed_time >= stage_duration[STAGE_COOL] || 
+                       current_temperature <= 30.0f) {
+                        current_stage = STAGE_COMPLETE;
+                        g_sys_params.state = PROCESS_IDLE;
+                        g_process_params.progress = 100.0f;
+                        
+                        // Í£Ö¹ËùÓĞµç»ú
+                        Motor_EmergencyStop();
+                        motors_running = 0;
+                        
+                        // ÏÔÊ¾Íê³ÉĞÅÏ¢
+                        OLED_Clear();
+                        OLED_ShowString(0, 0, "¹¤ÒÕÍê³É", OLED_8X16);
+                        OLED_ShowString(0, 16, "°´ÈÎÒâ¼ü·µ»Ø", OLED_8X16);
+                        OLED_Update();
+                        HAL_Delay(2000);
+                    }
+                    break;
+                    
+                default:
+                    break;
+            }
+            
+            // ¸üĞÂÏµÍ³²ÎÊıÓÃÓÚÏÔÊ¾
+            g_process_params.temperature = current_temperature;
+            g_process_params.pressure[0] = current_pressure;
+        }
+        
+        // ¸üĞÂÏÔÊ¾
+        if(!process_confirmed || (process_confirmed && current_stage == STAGE_READY)) {
+            if(oled_update_needed) {
+                // ÏÔÊ¾»¶Ó­½çÃæ
+                OLED_Clear();
+                OLED_ShowString(0, 0, "ÁùÃæ¶¥¹¤ÒÕ¿ØÖÆ", OLED_8X16);
+                OLED_ShowString(0, 16, "°´¼ü3: Æô¶¯¹¤ÒÕ", OLED_8X16);
+                OLED_ShowString(0, 32, "°´¼ü4: ·µ»Ø", OLED_8X16);
+                OLED_ShowString(0, 48, "°´¼ü5: ½ô¼±Í£Ö¹", OLED_8X16);
+                OLED_Update();
+                oled_update_needed = 0;
+            }
+        } else if(motors_running || current_stage == STAGE_COMPLETE) {
+            // Ã¿´ÎÑ­»·¶¼ÖØ»æ½çÃæ£¬ÒòÎª¹¤ÒÕ²ÎÊıĞèÒªÊµÊ±¸üĞÂ
+            OLED_Clear();
+            
+            // ÏÔÊ¾×´Ì¬À¸
+            display_status_bar();
+            
+            // ÏÔÊ¾3DÄ£ĞÍ
+            display_3d_model();
+            
+            // ÏÔÊ¾½×¶ÎĞÅÏ¢
+            const char *stage_names[] = {"×¼±¸ÖĞ", "¼ÓÈÈÖĞ", "¼ÓÑ¹ÖĞ", "±£³ÖÖĞ", "ÀäÈ´ÖĞ", "ÒÑÍê³É"};
+            OLED_ShowString(0, 0, (char*)stage_names[current_stage], OLED_8X16);
+            
+            // ÏÔÊ¾Ñ¹Á¦ÌõĞÎÍ¼
+            display_pressure_bars();
+            
+            // ÏÔÊ¾ÎÂ¶È
+            display_temperature();
+            
+            // ÏÔÊ¾½ø¶È
+            display_progress();
+            
+            // ¸üĞÂÁ£×ÓĞ§¹û - ½öÔÚ¹¤ÒÕÔËĞĞÊ±ÏÔÊ¾
+            if(motors_running) {
+                update_particle_effects();
+            }
+            
+            // ÏÔÊ¾µç»ú×´Ì¬
+            if(motors_running) {
+                char motor_info[20];
+                uint32_t steps = Motor_GetStepCount(0);
+                snprintf(motor_info, sizeof(motor_info), "M:%lu", steps);
+                OLED_ShowString(80, 0, motor_info, OLED_8X16);
+            }
+            
+            // Ö±½Ó¸üĞÂ£¬ÒòÎª´Ë½çÃæÄÚÈİ×ÜÊÇÔÚ±ä»¯
+            OLED_Update();
+        }
+    }
+}
+
+/**
+ * @brief  ²ÎÊıÉèÖÃ²Ëµ¥Èë¿Ú
+ * @note  Ñ¡ÔñÒª½øÈëµÄ×Ó²Ëµ¥
+ * @retval int ·µ»ØÖµËµÃ÷
+ */
+int menu2(void)
+{
+    uint8_t select = 0;
+    // ÔÚº¯ÊıÄÚ²¿¶¨Òå²Ëµ¥Ïî
+    static const MenuItem main_menu_items[] = {
+        {"Ñ¹Á¦ÉèÖÃ", menu3_PressureSet},
+        {"ÎÂ¶ÈÉèÖÃ", menu3_TemperatureSet},
+        {"Ê±¼äÉèÖÃ", menu3_TimeSet},
+        {"¹¤ÒÕÑ¡Ôñ", menu3_ProcessSelect},
+        {"Êı¾İ¼ÇÂ¼", menu3_DataRecord},
+        {"ÏµÍ³ÅäÖÃ", menu3_SystemConfig},
+        {"ÏµÍ³×´Ì¬", menu_motor_status}
+    };
+    uint8_t count = sizeof(main_menu_items) / sizeof(main_menu_items[0]);
+    
+    // Ê×´Î½øÈëÊ±±ê¼ÇĞèÒª¸üĞÂ
+    oled_update_needed = 1;
+    
+    while(1)
+    {
+        if (oled_update_needed) {
+            display_menu_items(main_menu_items, count, select);
+            // display_menu_itemsÒÑ¾­µ÷ÓÃÁËOLED_Update²¢ÖØÖÃ±êÖ¾Î»
+        }
+        
+        KeyNum = Key_GetNum();
+        
+        switch(KeyNum)
+        {
+            case 1: // ÉÏ
+                select = (select > 0) ? (select - 1) : (count - 1);
+                oled_update_needed = 1; // ±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
+                break;
+                
+            case 2: // ÏÂ
+                select = (select < (count - 1)) ? (select + 1) : 0;
+                oled_update_needed = 1; // ±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
+                break;
+                
+            case 3: // È·ÈÏ
+                if(main_menu_items[select].handler != NULL) {
+                    main_menu_items[select].handler(); // Ö±½Óµ÷ÓÃ£¬²»Ê¹ÓÃreturn
+                    oled_update_needed = 1; // ·µ»ØÊ±±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
+                }
+                break;
+                
+            case 4: // ·µ»Ø
+                return 0; // Ö±½Ó·µ»Ø0£¬²»µ÷ÓÃÉÏÒ»¼¶º¯Êı
+        }
+    }
+}
+
+/**
+ * @brief  ²ÎÊıÉèÖÃ²Ëµ¥Èë¿Ú
+ * @retval int ·µ»ØÖµËµÃ÷
+ */
+int menu_settings(void)
+{
+    uint8_t select = 0;
+    // ÔÚº¯ÊıÄÚ²¿¶¨Òå²Ëµ¥Ïî
+    static const MenuItem settings_items[] = {
+        {"ÏÔÊ¾ÉèÖÃ", NULL},
+        {"²ÎÊıÉèÖÃ", NULL},
+        {"¸ß¼¶ÉèÖÃ", NULL},
+        {"ÏµÍ³ĞÅÏ¢", menu4_SystemInfo}
+    };
+    uint8_t count = sizeof(settings_items) / sizeof(settings_items[0]);
+    
+    // Ê×´Î½øÈëÊ±±ê¼ÇĞèÒª¸üĞÂ
+    oled_update_needed = 1;
+    
+    while(1)
+    {
+        if (oled_update_needed) {
+            display_menu_items(settings_items, count, select);
+            // display_menu_itemsÒÑ¾­µ÷ÓÃÁËOLED_Update²¢ÖØÖÃ±êÖ¾Î»
+        }
+        
+        KeyNum = Key_GetNum();
+        
+        switch(KeyNum)
+        {
+            case 1: // ÉÏ
+                select = (select > 0) ? (select - 1) : (count - 1);
+                oled_update_needed = 1; // ±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
+                break;
+                
+            case 2: // ÏÂ
+                select = (select < (count - 1)) ? (select + 1) : 0;
+                oled_update_needed = 1; // ±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
+                break;
+                
+            case 3: // È·ÈÏ
+                if(settings_items[select].handler != NULL) {
+                    settings_items[select].handler(); // Ö±½Óµ÷ÓÃ£¬²»Ê¹ÓÃreturn
+                    oled_update_needed = 1; // ·µ»ØÊ±±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
+                }
+                break;
+                
+            case 4: // ·µ»Ø
+                return 0; // Ö±½Ó·µ»Ø0£¬²»µ÷ÓÃÉÏÒ»¼¶º¯Êı
+        }
+    }
+}
+
+/**
+ * @brief  ÀúÊ·¼ÇÂ¼²Ëµ¥Èë¿Ú
+ * @retval int ·µ»ØÖµËµÃ÷
+ */
+int menu_history(void)
+{
+    uint8_t select = 0;
+    // ÔÚº¯ÊıÄÚ²¿¶¨Òå²Ëµ¥Ïî
+    static const MenuItem history_items[] = {
+        {"¼ÇÂ¼ 1", NULL},
+        {"¼ÇÂ¼ 2", NULL},
+        {"¼ÇÂ¼ 3", NULL},
+        {"È«²¿¼ÇÂ¼", NULL}
+    };
+    uint8_t count = sizeof(history_items) / sizeof(history_items[0]);
+    
+    // Ê×´Î½øÈëÊ±±ê¼ÇĞèÒª¸üĞÂ
+    oled_update_needed = 1;
+    
+    while(1)
+    {
+        if (oled_update_needed) {
+            display_menu_items(history_items, count, select);
+            // display_menu_itemsÒÑ¾­µ÷ÓÃÁËOLED_Update²¢ÖØÖÃ±êÖ¾Î»
+        }
+        
+        KeyNum = Key_GetNum();
+        
+        switch(KeyNum)
+        {
+            case 1: // ÉÏ
+                select = (select > 0) ? (select - 1) : (count - 1);
+                oled_update_needed = 1; // ±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
+                break;
+                
+            case 2: // ÏÂ
+                select = (select < (count - 1)) ? (select + 1) : 0;
+                oled_update_needed = 1; // ±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
+                break;
+                
+            case 3: // È·ÈÏ
+                if(history_items[select].handler != NULL) {
+                    history_items[select].handler(); // Ö±½Óµ÷ÓÃ£¬²»Ê¹ÓÃreturn
+                    oled_update_needed = 1; // ·µ»ØÊ±±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
+                } else {
+                    // ÀúÊ·¼ÇÂ¼¹¦ÄÜ´ıÊµÏÖ
+                    OLED_Clear();
+                    OLED_ShowString(0, 0, "ÀúÊ·¼ÇÂ¼", OLED_8X16);
+                    OLED_ShowString(0, 16, "ÔİÎŞÊı¾İ", OLED_8X16);
+                    OLED_Update(); // Ö±½Ó¸üĞÂÏÔÊ¾
+                    HAL_Delay(1000);
+                    oled_update_needed = 1; // ·µ»Ø²Ëµ¥Ê±ĞèÒª¸üĞÂÏÔÊ¾
+                }
+                break;
+                
+            case 4: // ·µ»Ø
+                return 0; // Ö±½Ó·µ»Ø0£¬²»µ÷ÓÃÉÏÒ»¼¶º¯Êı
+        }
+    }
+}
+
+/**
+ * @brief  ¹¤ÒÕÑ¡Ôñ²Ëµ¥Èë¿Ú
+ * @retval int ·µ»ØÖµËµÃ÷
+ */
+int menu3_ProcessSelect(void)
+{
+    uint8_t select = 0;
+    // ÔÚº¯ÊıÄÚ²¿¶¨Òå²Ëµ¥Ïî
+    static const MenuItem process_items[] = {
+        {"¹¤ÒÕ 1", menu4_Process1},
+        {"¹¤ÒÕ 2", menu4_Process2},
+        {"¹¤ÒÕ 3", menu4_Process3},
+        {"×Ô¶¯", NULL}
+    };
+    uint8_t count = sizeof(process_items) / sizeof(process_items[0]);
+    
+    // Ê×´Î½øÈëÊ±±ê¼ÇĞèÒª¸üĞÂ
+    oled_update_needed = 1;
+    
+    while(1)
+    {
+        if (oled_update_needed) {
+            display_menu_items(process_items, count, select);
+            // display_menu_itemsÒÑ¾­µ÷ÓÃÁËOLED_Update²¢ÖØÖÃ±êÖ¾Î»
+        }
+        
+        KeyNum = Key_GetNum();
+        
+        switch(KeyNum)
+        {
+            case 1: // ÉÏ
+                select = (select > 0) ? (select - 1) : (count - 1);
+                oled_update_needed = 1; // ±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
+                break;
+                
+            case 2: // ÏÂ
+                select = (select < (count - 1)) ? (select + 1) : 0;
+                oled_update_needed = 1; // ±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
+                break;
+                
+            case 3: // È·ÈÏ
+                if(process_items[select].handler != NULL) {
+                    process_items[select].handler(); // Ö±½Óµ÷ÓÃ£¬²»Ê¹ÓÃreturn
+                    oled_update_needed = 1; // ·µ»ØÊ±±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
+                }
+                break;
+                
+            case 4: // ·µ»Ø
+                return 0; // Ö±½Ó·µ»Ø0£¬²»µ÷ÓÃÉÏÒ»¼¶º¯Êı
+        }
+    }
+}
+
+/**
+ * @brief  ÏµÍ³ÅäÖÃ²Ëµ¥Èë¿Ú
+ * @retval int ·µ»ØÖµËµÃ÷
+ */
+int menu3_SystemConfig(void)
+{
+    uint8_t select = 0;
+    // ÔÚº¯ÊıÄÚ²¿¶¨Òå²Ëµ¥Ïî
+    static const MenuItem config_items[] = {
+        {"Ñ¹Á¦Ğ£×¼", menu4_CalibrationP},
+        {"ÎÂ¶ÈĞ£×¼", menu4_CalibrationT},
+        {"±¨¾¯ÅäÖÃ", menu4_AlarmConfig},
+        {"ÏµÍ³ĞÅÏ¢", menu4_SystemInfo}
+    };
+    uint8_t count = sizeof(config_items) / sizeof(config_items[0]);
+    
+    // Ê×´Î½øÈëÊ±±ê¼ÇĞèÒª¸üĞÂ
+    oled_update_needed = 1;
+    
+    while(1)
+    {
+        if (oled_update_needed) {
+            display_menu_items(config_items, count, select);
+            // display_menu_itemsÒÑ¾­µ÷ÓÃÁËOLED_Update²¢ÖØÖÃ±êÖ¾Î»
+        }
+        
+        KeyNum = Key_GetNum();
+        
+        switch(KeyNum)
+        {
+            case 1: // ÉÏ
+                select = (select > 0) ? (select - 1) : (count - 1);
+                oled_update_needed = 1; // ±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
+                break;
+                
+            case 2: // ÏÂ
+                select = (select < (count - 1)) ? (select + 1) : 0;
+                oled_update_needed = 1; // ±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
+                break;
+                
+            case 3: // È·ÈÏ
+                if(config_items[select].handler != NULL) {
+                    config_items[select].handler(); // Ö±½Óµ÷ÓÃ£¬²»Ê¹ÓÃreturn
+                    oled_update_needed = 1; // ·µ»ØÊ±±ê¼ÇĞèÒª¸üĞÂÏÔÊ¾
+                }
+                break;
+                
+            case 4: // ·µ»Ø
+                return 0; // Ö±½Ó·µ»Ø0£¬²»µ÷ÓÃÉÏÒ»¼¶º¯Êı
+        }
+    }
+}
+
+/**
+ * @brief  Êı¾İ¼ÇÂ¼²Ëµ¥Èë¿Ú
+ * @retval int ·µ»ØÖµËµÃ÷
+ */
+int menu3_DataRecord(void)
+{
+    // Êı¾İ¼ÇÂ¼¹¦ÄÜ´ıÊµÏÖ
+    OLED_Clear();
+    OLED_ShowString(0, 0, "Êı¾İ¼ÇÂ¼", OLED_8X16);
+    OLED_ShowString(0, 16, "ÔİÎŞÊı¾İ", OLED_8X16);
+    OLED_Update(); // Ö±½Ó¸üĞÂÏÔÊ¾
+    
+    while(1)
+    {
+        KeyNum = Key_GetNum();
+        if(KeyNum == 4) return 0; // Ö±½Ó·µ»Ø0£¬²»µ÷ÓÃÉÏÒ»¼¶º¯Êı
+    }
+}
+
+/**
+ * @brief  ¹¤ÒÕ1²ÎÊıÉèÖÃ
+ * @retval int ·µ»ØÖµËµÃ÷
  */
 int menu4_Process1(void)
 {
-    // å·¥è‰º1å‚æ•°è®¾ç½®å¾…å®ç°
+    // ÏÔÊ¾ÉèÖÃÖĞ...
     OLED_Clear();
-    OLED_ShowString(0, 0, "å·¥è‰º 1", OLED_8X16);
-    OLED_ShowString(0, 16, "åŠŸèƒ½æœªå®ç°", OLED_8X16);
-    OLED_Update();
+    OLED_ShowString(0, 0, "¹¤ÒÕ 1", OLED_8X16);
+    OLED_ShowString(0, 16, "ÕıÔÚÉèÖÃ...", OLED_8X16);
+    OLED_Update(); // Ö±½Ó¸üĞÂÏÔÊ¾
     
-    while(1)
-    {
-        KeyNum = Key_GetNum();
-        if(KeyNum == 4) return menu3_ProcessSelect();
-    }
+    // ÑÓÊ±Ò»Ãë
+    HAL_Delay(1000);
+    
+    // ÏÔÊ¾ÉèÖÃ³É¹¦
+    OLED_Clear();
+    OLED_ShowString(0, 0, "¹¤ÒÕ 1", OLED_8X16);
+    OLED_ShowString(0, 16, "ÉèÖÃ³É¹¦", OLED_8X16);
+    OLED_Update(); // Ö±½Ó¸üĞÂÏÔÊ¾
+    
+    // ÔÙÑÓÊ±Ò»Ãë
+    HAL_Delay(1000);
+	return 0;
 }
 
 /**
- * @brief  å·¥è‰º2å‚æ•°è®¾ç½®
- * @retval int è¿”å›å€¼è¯´æ˜
+ * @brief  ¹¤ÒÕ2²ÎÊıÉèÖÃ
+ * @retval int ·µ»ØÖµËµÃ÷
  */
 int menu4_Process2(void)
 {
-    // å·¥è‰º2å‚æ•°è®¾ç½®å¾…å®ç°
+    // ÏÔÊ¾ÉèÖÃÖĞ...
     OLED_Clear();
-    OLED_ShowString(0, 0, "å·¥è‰º 2", OLED_8X16);
-    OLED_ShowString(0, 16, "åŠŸèƒ½æœªå®ç°", OLED_8X16);
-    OLED_Update();
+    OLED_ShowString(0, 0, "¹¤ÒÕ 2", OLED_8X16);
+    OLED_ShowString(0, 16, "ÕıÔÚÉèÖÃ...", OLED_8X16);
+    OLED_Update(); // Ö±½Ó¸üĞÂÏÔÊ¾
     
-    while(1)
-    {
-        KeyNum = Key_GetNum();
-        if(KeyNum == 4) return menu3_ProcessSelect();
-    }
+    // ÑÓÊ±Ò»Ãë
+    HAL_Delay(1000);
+    
+    // ÏÔÊ¾ÉèÖÃ³É¹¦
+    OLED_Clear();
+    OLED_ShowString(0, 0, "¹¤ÒÕ 2", OLED_8X16);
+    OLED_ShowString(0, 16, "ÉèÖÃ³É¹¦", OLED_8X16);
+    OLED_Update(); // Ö±½Ó¸üĞÂÏÔÊ¾
+    
+    // ÔÙÑÓÊ±Ò»Ãë
+    HAL_Delay(1000);
+	return 0;
 }
 
 /**
- * @brief  å·¥è‰º3å‚æ•°è®¾ç½®
- * @retval int è¿”å›å€¼è¯´æ˜
+ * @brief  ¹¤ÒÕ3²ÎÊıÉèÖÃ
+ * @retval int ·µ»ØÖµËµÃ÷
  */
 int menu4_Process3(void)
 {
-    // å·¥è‰º3å‚æ•°è®¾ç½®å¾…å®ç°
+    // ÏÔÊ¾ÉèÖÃÖĞ...
     OLED_Clear();
-    OLED_ShowString(0, 0, "å·¥è‰º 3", OLED_8X16);
-    OLED_ShowString(0, 16, "åŠŸèƒ½æœªå®ç°", OLED_8X16);
-    OLED_Update();
+    OLED_ShowString(0, 0, "¹¤ÒÕ 3", OLED_8X16);
+    OLED_ShowString(0, 16, "ÕıÔÚÉèÖÃ...", OLED_8X16);
+    OLED_Update(); // Ö±½Ó¸üĞÂÏÔÊ¾
     
-    while(1)
-    {
-        KeyNum = Key_GetNum();
-        if(KeyNum == 4) return menu3_ProcessSelect();
-    }
+    // ÑÓÊ±Ò»Ãë
+    HAL_Delay(1000);
+    
+    // ÏÔÊ¾ÉèÖÃ³É¹¦
+    OLED_Clear();
+    OLED_ShowString(0, 0, "¹¤ÒÕ 3", OLED_8X16);
+    OLED_ShowString(0, 16, "ÉèÖÃ³É¹¦", OLED_8X16);
+    OLED_Update(); // Ö±½Ó¸üĞÂÏÔÊ¾
+    
+    // ÔÙÑÓÊ±Ò»Ãë
+    HAL_Delay(1000);
+	return 0;
 }
 
 /**
- * @brief  å‹åŠ›æ ¡å‡†ç•Œé¢
- * @retval int è¿”å›å€¼è¯´æ˜
+ * @brief  Ñ¹Á¦Ğ£×¼²Ëµ¥Èë¿Ú
+ * @retval int ·µ»ØÖµËµÃ÷
  */
 int menu4_CalibrationP(void)
 {
-    // å‹åŠ›æ ¡å‡†åŠŸèƒ½å¾…å®ç°
+    // Ñ¹Á¦Ğ£×¼¹¦ÄÜ´ıÊµÏÖ
     OLED_Clear();
-    OLED_ShowString(0, 0, "å‹åŠ›æ ¡å‡†", OLED_8X16);
-    OLED_ShowString(0, 16, "åŠŸèƒ½æœªå®ç°", OLED_8X16);
-    OLED_Update();
+    OLED_ShowString(0, 0, "Ñ¹Á¦Ğ£×¼", OLED_8X16);
+    OLED_ShowString(0, 16, "ÔİÎŞÊı¾İ", OLED_8X16);
+    OLED_Update(); // Ö±½Ó¸üĞÂÏÔÊ¾
     
     while(1)
     {
         KeyNum = Key_GetNum();
-        if(KeyNum == 4) return menu3_SystemConfig();
+        if(KeyNum == 4) return 0; // Ö±½Ó·µ»Ø0£¬²»µ÷ÓÃÉÏÒ»¼¶º¯Êı
     }
 }
 
 /**
- * @brief  æ¸©åº¦æ ¡å‡†ç•Œé¢
- * @retval int è¿”å›å€¼è¯´æ˜
+ * @brief  ÎÂ¶ÈĞ£×¼²Ëµ¥Èë¿Ú
+ * @retval int ·µ»ØÖµËµÃ÷
  */
 int menu4_CalibrationT(void)
 {
-    // æ¸©åº¦æ ¡å‡†åŠŸèƒ½å¾…å®ç°
+    // ÎÂ¶ÈĞ£×¼¹¦ÄÜ´ıÊµÏÖ
     OLED_Clear();
-    OLED_ShowString(0, 0, "æ¸©åº¦æ ¡å‡†", OLED_8X16);
-    OLED_ShowString(0, 16, "åŠŸèƒ½æœªå®ç°", OLED_8X16);
-    OLED_Update();
+    OLED_ShowString(0, 0, "ÎÂ¶ÈĞ£×¼", OLED_8X16);
+    OLED_ShowString(0, 16, "ÔİÎŞÊı¾İ", OLED_8X16);
+    OLED_Update(); // Ö±½Ó¸üĞÂÏÔÊ¾
     
     while(1)
     {
         KeyNum = Key_GetNum();
-        if(KeyNum == 4) return menu3_SystemConfig();
+        if(KeyNum == 4) return 0; // Ö±½Ó·µ»Ø0£¬²»µ÷ÓÃÉÏÒ»¼¶º¯Êı
     }
 }
 
 /**
- * @brief  æŠ¥è­¦è®¾ç½®ç•Œé¢
- * @retval int è¿”å›å€¼è¯´æ˜
+ * @brief  ±¨¾¯ÅäÖÃ²Ëµ¥Èë¿Ú
+ * @retval int ·µ»ØÖµËµÃ÷
  */
 int menu4_AlarmConfig(void)
 {
-    // æŠ¥è­¦è®¾ç½®ç•Œé¢å¾…å®ç°
+    // ±¨¾¯ÅäÖÃ¹¦ÄÜ´ıÊµÏÖ
     OLED_Clear();
-    OLED_ShowString(0, 0, "æŠ¥è­¦è®¾ç½®", OLED_8X16);
-    OLED_ShowString(0, 16, "åŠŸèƒ½æœªå®ç°", OLED_8X16);
-    OLED_Update();
+    OLED_ShowString(0, 0, "±¨¾¯ÅäÖÃ", OLED_8X16);
+    OLED_ShowString(0, 16, "ÔİÎŞÊı¾İ", OLED_8X16);
+    OLED_Update(); // Ö±½Ó¸üĞÂÏÔÊ¾
     
     while(1)
     {
         KeyNum = Key_GetNum();
-        if(KeyNum == 4) return menu3_SystemConfig();
+        if(KeyNum == 4) return 0; // Ö±½Ó·µ»Ø0£¬²»µ÷ÓÃÉÏÒ»¼¶º¯Êı
     }
 }
 
 /**
- * @brief  ç³»ç»Ÿä¿¡æ¯ç•Œé¢
- * @retval int è¿”å›å€¼è¯´æ˜
+ * @brief  ÏµÍ³ĞÅÏ¢²Ëµ¥Èë¿Ú
+ * @retval int ·µ»ØÖµËµÃ÷
  */
 int menu4_SystemInfo(void)
 {
-    // ç³»ç»Ÿä¿¡æ¯
+    // ÏµÍ³ĞÅÏ¢
     OLED_Clear();
-    OLED_ShowString(0, 0, "ç³»ç»Ÿä¿¡æ¯", OLED_8X16);
-    OLED_ShowString(0, 16, "ç¡¬ä»¶: v1.0", OLED_8X16);
-    OLED_ShowString(0, 32, "è½¯ä»¶: v1.2", OLED_8X16);
-    OLED_ShowString(0, 48, "åºåˆ—å·: 2023112301", OLED_8X16);
-    OLED_Update();
+    OLED_ShowString(0, 0, "ÏµÍ³ĞÅÏ¢", OLED_8X16);
+    OLED_ShowString(0, 16, "Ó²¼ş: v1.0", OLED_8X16);
+    OLED_ShowString(0, 32, "Èí¼ş: v1.2", OLED_8X16);
+    OLED_ShowString(0, 48, "°æ±¾ºÅ: 2023112301", OLED_8X16);
+    OLED_Update(); // Ö±½Ó¸üĞÂÏÔÊ¾
     
     while(1)
     {
         KeyNum = Key_GetNum();
-        if(KeyNum == 4) 
-            return menu3_SystemConfig();
+        if(KeyNum == 4) return 0; // Ö±½Ó·µ»Ø0£¬²»µ÷ÓÃÉÏÒ»¼¶º¯Êı
     }
 }
 
 /**
- * @brief  æ­¥è¿›ç”µæœºçŠ¶æ€æ˜¾ç¤ºç•Œé¢
- * @retval int è¿”å›å€¼è¯´æ˜
+ * @brief  ÏµÍ³×´Ì¬ÏÔÊ¾²Ëµ¥Èë¿Ú
+ * @retval int ·µ»ØÖµËµÃ÷
  */
 int menu_motor_status(void)
 {
-    // ç”µæœºå‚æ•°
+    // ÏµÍ³×´Ì¬
     static struct {
-        float feed_x;  // Xè½´è¿›ç»™é‡
-        float feed_y;  // Yè½´è¿›ç»™é‡
-        float feed_z;  // Zè½´è¿›ç»™é‡
-        float speed_x; // Xè½´é€Ÿåº¦
-        float speed_y; // Yè½´é€Ÿåº¦
-        float speed_z; // Zè½´é€Ÿåº¦
+        float feed_x;  // X·½Ïò
+        float feed_y;  // Y·½Ïò
+        float feed_z;  // Z·½Ïò
+        float speed_x; // XËÙ¶È
+        float speed_y; // YËÙ¶È
+        float speed_z; // ZËÙ¶È
     } motor_params = {
         .feed_x = 0.0f,
         .feed_y = 0.0f,
@@ -943,88 +1240,23 @@ int menu_motor_status(void)
         .speed_z = 100.0f
     };
     
-    uint8_t select = 0;  // 0-5: Xè¿›ç»™ã€Yè¿›ç»™ã€Zè¿›ç»™ã€Xé€Ÿåº¦ã€Yé€Ÿåº¦ã€Zé€Ÿåº¦
+    uint8_t select = 0;  // 0-5: X·½ÏòY·½ÏòZ·½ÏòXËÙ¶ÈYËÙ¶ÈZËÙ¶È
     uint8_t edit_mode = 0;
     float *current_value = &motor_params.feed_x;
     
+    // Ê×´Î½øÈëÊ±±ê¼ÇĞèÒª¸üĞÂ
+    oled_update_needed = 1;
+    
     while(1)
     {
-        KeyNum = Key_GetNum();
-        
-        if(!edit_mode) {
-            switch(KeyNum)
-            {
-                case 1: // ä¸Š
-                    select = (select > 0) ? (select - 1) : 5;
-                    switch(select) {
-                        case 0: current_value = &motor_params.feed_x; break;
-                        case 1: current_value = &motor_params.feed_y; break;
-                        case 2: current_value = &motor_params.feed_z; break;
-                        case 3: current_value = &motor_params.speed_x; break;
-                        case 4: current_value = &motor_params.speed_y; break;
-                        case 5: current_value = &motor_params.speed_z; break;
-                    }
-                    break;
-                    
-                case 2: // ä¸‹
-                    select = (select < 5) ? (select + 1) : 0;
-                    switch(select) {
-                        case 0: current_value = &motor_params.feed_x; break;
-                        case 1: current_value = &motor_params.feed_y; break;
-                        case 2: current_value = &motor_params.feed_z; break;
-                        case 3: current_value = &motor_params.speed_x; break;
-                        case 4: current_value = &motor_params.speed_y; break;
-                        case 5: current_value = &motor_params.speed_z; break;
-                    }
-                    break;
-                    
-                case 3: // è¿›å…¥ç¼–è¾‘æ¨¡å¼
-                    edit_mode = 1;
-                    break;
-                    
-                case 4: // è¿”å›
-                    return menu2();
-            }
-        } else {
-            switch(KeyNum)
-            {
-                case 1: // å¢åŠ 
-                    if(select < 3) { // è¿›ç»™é‡è®¾ç½®
-                        *current_value += 0.1f;
-                        if(*current_value > MAX_FEED) *current_value = MAX_FEED;
-                    } else { // é€Ÿåº¦è®¾ç½®
-                        *current_value += 10.0f;
-                        if(*current_value > MAX_SPEED) *current_value = MAX_SPEED;
-                    }
-                    break;
-                    
-                case 2: // å‡å°
-                    if(select < 3) { // è¿›ç»™é‡è®¾ç½®
-                        *current_value -= 0.1f;
-                        if(*current_value < 0) *current_value = 0;
-                    } else { // é€Ÿåº¦è®¾ç½®
-                        *current_value -= 10.0f;
-                        if(*current_value < 0) *current_value = 0;
-                    }
-                    break;
-                    
-                case 3: // ç¡®è®¤
-                    edit_mode = 0;
-                    break;
-                    
-                case 4: // å–æ¶ˆ
-                    edit_mode = 0;
-                    break;
-            }
-        }
-        
-        // æ˜¾ç¤ºç•Œé¢
+        // ÏÔÊ¾ÏµÍ³×´Ì¬ĞèÒªÊµÊ±¸üĞÂ£¬Ö±½Ó´¦Àí¶ø²»Ê¹ÓÃ±ê¼Ç
+        // ÏÔÊ¾ÏµÍ³×´Ì¬
         OLED_Clear();
         
-        // æ ‡é¢˜
-        OLED_ShowString(0, 0, "ç”µæœºçŠ¶æ€", OLED_8X16);
+        // ÏÔÊ¾ÏµÍ³×´Ì¬À¸
+        OLED_ShowString(0, 0, "ÏµÍ³×´Ì¬", OLED_8X16);
         
-        // æ˜¾ç¤ºä¸‰ä¸ªç”µæœºçš„è¿›ç»™é‡
+        // ÏÔÊ¾ÏµÍ³×´Ì¬À¸µÄ×ÓÑ¡Ïî
         OLED_ShowString(0, 16, "X:", OLED_8X16);
         OLED_Printf(16, 16, OLED_8X16, "%.1fmm", motor_params.feed_x);
         if(select == 0 && edit_mode) OLED_ShowString(120, 16, "*", OLED_8X16);
@@ -1040,7 +1272,7 @@ int menu_motor_status(void)
         if(select == 2 && edit_mode) OLED_ShowString(120, 48, "*", OLED_8X16);
         else if(select == 2) OLED_ShowString(120, 48, ">", OLED_8X16);
         
-        // æ˜¾ç¤ºé€Ÿåº¦å€¼ï¼ˆåœ¨è¿›ç»™é‡å³ä¾§ï¼‰
+        // ÏÔÊ¾ËÙ¶ÈÖµ£¨ÔÚ×ÓÑ¡ÏîÖĞ£©
         OLED_Printf(64, 16, OLED_8X16, "%.1f%%", motor_params.speed_x);
         if(select == 3 && edit_mode) OLED_ShowString(120, 16, "*", OLED_8X16);
         else if(select == 3) OLED_ShowString(120, 16, ">", OLED_8X16);
@@ -1053,6 +1285,173 @@ int menu_motor_status(void)
         if(select == 5 && edit_mode) OLED_ShowString(120, 48, "*", OLED_8X16);
         else if(select == 5) OLED_ShowString(120, 48, ">", OLED_8X16);
         
-        OLED_Update();
+        OLED_Update(); // Ö±½Ó¸üĞÂÏÔÊ¾
+        
+        KeyNum = Key_GetNum();
+        
+        if(!edit_mode) {
+            switch(KeyNum)
+            {
+                case 1: // ÉÏ
+                    select = (select > 0) ? (select - 1) : 5;
+                    switch(select) {
+                        case 0: current_value = &motor_params.feed_x; break;
+                        case 1: current_value = &motor_params.feed_y; break;
+                        case 2: current_value = &motor_params.feed_z; break;
+                        case 3: current_value = &motor_params.speed_x; break;
+                        case 4: current_value = &motor_params.speed_y; break;
+                        case 5: current_value = &motor_params.speed_z; break;
+                    }
+                    break;
+                    
+                case 2: // ÏÂ
+                    select = (select < 5) ? (select + 1) : 0;
+                    switch(select) {
+                        case 0: current_value = &motor_params.feed_x; break;
+                        case 1: current_value = &motor_params.feed_y; break;
+                        case 2: current_value = &motor_params.feed_z; break;
+                        case 3: current_value = &motor_params.speed_x; break;
+                        case 4: current_value = &motor_params.speed_y; break;
+                        case 5: current_value = &motor_params.speed_z; break;
+                    }
+                    break;
+                    
+                case 3: // ÇĞ»»±à¼­Ä£Ê½
+                    edit_mode = 1;
+                    break;
+                    
+                case 4: // ·µ»Ø
+                    return 0; // Ö±½Ó·µ»Ø0£¬²»µ÷ÓÃÉÏÒ»¼¶º¯Êı
+            }
+        } else {
+            switch(KeyNum)
+            {
+                case 1: // ÉÏ
+                    if(select < 3) { // ·½Ïò²ÎÊı
+                        *current_value += 0.1f;
+                        if(*current_value > MAX_FEED) *current_value = MAX_FEED;
+                    } else { // ËÙ¶È²ÎÊı
+                        *current_value += 10.0f;
+                        if(*current_value > MAX_SPEED) *current_value = MAX_SPEED;
+                    }
+                    break;
+                    
+                case 2: // ÏÂ
+                    if(select < 3) { // ·½Ïò²ÎÊı
+                        *current_value -= 0.1f;
+                        if(*current_value < 0) *current_value = 0;
+                    } else { // ËÙ¶È²ÎÊı
+                        *current_value -= 10.0f;
+                        if(*current_value < 0) *current_value = 0;
+                    }
+                    break;
+                    
+                case 3: // È·ÈÏ
+                    edit_mode = 0;
+                    break;
+                    
+                case 4: // ·µ»Ø
+                    edit_mode = 0;
+                    break;
+            }
+        }
     }
 }
+
+/**
+ * @brief  Ö÷²Ëµ¥Èë¿Ú - Ïòºó¼æÈİµÄº¯Êı
+ * @retval int ·µ»ØÖµËµÃ÷
+ */
+int menu_main(void)
+{
+    menu1(); // Ö±½Óµ÷ÓÃ¶ø²»ÊÇ·µ»Ø
+    return 0; // ÓÀÔ¶²»»áÖ´ĞĞµ½ÕâÀï
+}
+
+/**
+ * @brief ÏÔÊ¾ÓĞĞ§Êı¾İÖµ
+ * ×¢£º´Ëº¯ÊıÎ´Ê¹ÓÃ£¬ÔİÊ±×¢ÊÍµôÒÔÏû³ı±àÒë¾¯¸æ
+ */
+#if 0
+static void display_value_with_animation(float value, uint8_t x, uint8_t y) {
+    static uint8_t animation_step = 0;
+    char value_str[16];
+    
+    // ¸ù¾İ×´Ì¬Ñ¡ÔñÏÔÊ¾Ğ§¹û
+    if(g_sys_params.alert == ALERT_CRITICAL) {
+        if(animation_step++ % 2) {
+            // OLED_InvertRectÎ´ÊµÏÖ
+            // OLED_InvertRect(x, y, x+48, y+16);
+        }
+    }
+    
+    snprintf(value_str, sizeof(value_str), "%.1f", value);
+    OLED_ShowString(x, y, value_str, OLED_8X16);
+}
+#endif
+
+/**
+ * @brief ¸üĞÂÏµÍ³×´Ì¬
+ * ×¢£º´Ëº¯ÊıÎ´Ê¹ÓÃ£¬ÔİÊ±×¢ÊÍµôÒÔÏû³ı±àÒë¾¯¸æ
+ */
+#if 0
+static void update_system_state(void) {
+    static uint32_t last_check = 0;
+    uint32_t current_time = HAL_GetTick();
+    
+    if(current_time - last_check >= REFRESH_RATE_MS) {
+        // ¶ÁÈ¡Ñ¹Á¦ºÍÎÂ¶È
+        g_sys_params.pressure = Get_Pressure();
+        g_sys_params.temperature = Get_Temperature();
+        
+        // ×´Ì¬ÅĞ¶Ï
+        if(g_sys_params.pressure > MAX_PRESSURE * 0.9f) {
+            g_sys_params.alert = ALERT_CRITICAL;
+            g_sys_params.alert_count++;
+            show_warning_effect();
+        } else if(g_sys_params.pressure > MAX_PRESSURE * 0.8f) {
+            g_sys_params.alert = ALERT_WARNING;
+        } else {
+            g_sys_params.alert = ALERT_NONE;
+        }
+        
+        // ĞÂ×´Ì¬ - µç»ú×´Ì¬
+        Motor_State status0 = Motor_GetState(0);
+        Motor_State status1 = Motor_GetState(1);
+        Motor_State status2 = Motor_GetState(2);
+        
+        // Èç¹ûÓĞÒ»¸ö×´Ì¬ÎªMOTOR_ERRORÔòÏµÍ³×´Ì¬Îª´íÎó
+        if(status0 == MOTOR_ERROR || status1 == MOTOR_ERROR || status2 == MOTOR_ERROR) {
+            g_sys_params.motor_status = MOTOR_ERROR;
+        }
+        // Èç¹ûÓĞÒ»¸ö×´Ì¬ÎªMOTOR_RUNNINGÔòÏµÍ³×´Ì¬ÎªÔËĞĞ
+        else if(status0 == MOTOR_RUNNING || status1 == MOTOR_RUNNING || status2 == MOTOR_RUNNING) {
+            g_sys_params.motor_status = MOTOR_RUNNING;
+        }
+        // ÏµÍ³×´Ì¬ÎªÍ£Ö¹
+        else {
+            g_sys_params.motor_status = MOTOR_STOP;
+        }
+        
+        last_check = current_time;
+    }
+}
+#endif
+
+/**
+ * @brief ÇĞ»»°×Ìì/Ò¹ÍíÏÔÊ¾Ä£Ê½
+ * ×¢£º´Ëº¯ÊıÎ´Ê¹ÓÃ£¬ÔİÊ±×¢ÊÍµôÒÔÏû³ı±àÒë¾¯¸æ
+ */
+#if 0
+static void toggle_night_mode(void) {
+    static DisplayMode mode = DISPLAY_MODE_NORMAL;
+    mode = (mode == DISPLAY_MODE_NIGHT) ? DISPLAY_MODE_NORMAL : DISPLAY_MODE_NIGHT;
+    
+    // OLED¶Ô±È¶È×Ô¶¯µ÷ÕûÎ´ÊµÏÖ
+    /*if(mode == DISPLAY_MODE_NIGHT) {
+        OLED_SetContrast(0x20); // ×Ô¶¯µ÷µÍ
+    } else {
+        OLED_SetContrast(0xFF); // ×Ô¶¯µ÷¸ß
+    }*/
+}
+#endif

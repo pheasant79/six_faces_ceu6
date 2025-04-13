@@ -42,6 +42,7 @@ motor_ceu6\menu.o: ../system/inc/mymath.h
 motor_ceu6\menu.o: ../hardware/inc/Key.h
 motor_ceu6\menu.o: ../system/inc/pressure.h
 motor_ceu6\menu.o: ../system/inc/temperature.h
+motor_ceu6\menu.o: ../hardware/inc/led.h
 motor_ceu6\menu.o: D:\apks\Keil5\ARM\ARMCC\Bin\..\include\stdlib.h
 motor_ceu6\menu.o: D:\apks\Keil5\ARM\ARMCC\Bin\..\include\string.h
 motor_ceu6\menu.o: D:\apks\Keil5\ARM\ARMCC\Bin\..\include\math.h

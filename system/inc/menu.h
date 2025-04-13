@@ -1,6 +1,6 @@
 /**
  * @file menu.h
- * @brief å…­é¢é¡¶èœå•ç³»ç»Ÿå¤´æ–‡ä»¶ - ç¢³è½¬çŸ³å¢¨è¿‡ç¨‹å¯è§†åŒ–
+ * @brief ÁùÃæ¶¥²Ëµ¥ÏµÍ³Í·ÎÄ¼ş - Ì¼×ªÊ¯Ä«¹ı³Ì¿ÉÊÓ»¯
  */
 #ifndef __MENU_H__
 #define __MENU_H__
@@ -17,46 +17,46 @@
 #include <math.h>
 #include <stdio.h>
 
-/* å¸¸é‡å®šä¹‰ */
-#define REFRESH_RATE_MS    100     // åˆ·æ–°ç‡(ms)
-#define MAX_PARTICLES      20      // æœ€å¤§ç²’å­æ•°
-#define WARNING_BLINK_MS   300     // è­¦å‘Šé—ªçƒå‘¨æœŸ
-#define ANIMATION_DURATION_MS 280  // åŠ¨ç”»æŒç»­æ—¶é—´
-#define SCREEN_WIDTH       128     // OLEDå±å¹•å®½åº¦
-#define SCREEN_HEIGHT      64      // OLEDå±å¹•é«˜åº¦
+/* ³£Á¿¶¨Òå */
+#define REFRESH_RATE_MS    100     // Ë¢ĞÂÂÊ(ms)
+#define MAX_PARTICLES      20      // ×î´óÁ£×ÓÊı
+#define WARNING_BLINK_MS   300     // ¾¯¸æÉÁË¸ÖÜÆÚ
+#define ANIMATION_DURATION_MS 280  // ¶¯»­³ÖĞøÊ±¼ä
+#define SCREEN_WIDTH       128     // OLEDÆÁÄ»¿í¶È
+#define SCREEN_HEIGHT      64      // OLEDÆÁÄ»¸ß¶È
 
 /**
- * @brief å·¥è‰ºçŠ¶æ€æšä¸¾
+ * @brief ¹¤ÒÕ×´Ì¬Ã¶¾Ù
  */
 typedef enum {
-    PROCESS_IDLE,       // å¾…æœº
-    PROCESS_HEATING,    // åŠ çƒ­é˜¶æ®µ
-    PROCESS_PRESSING,   // åŠ å‹é˜¶æ®µ
-    PROCESS_TRANSFORM,  // è½¬åŒ–é˜¶æ®µ
-    PROCESS_COOLING,    // å†·å´é˜¶æ®µ
-    PROCESS_ERROR       // é”™è¯¯çŠ¶æ€
+    PROCESS_IDLE,       // ´ı»ú
+    PROCESS_HEATING,    // ¼ÓÈÈ½×¶Î
+    PROCESS_PRESSING,   // ¼ÓÑ¹½×¶Î
+    PROCESS_TRANSFORM,  // ×ª»¯½×¶Î
+    PROCESS_COOLING,    // ÀäÈ´½×¶Î
+    PROCESS_ERROR       // ´íÎó×´Ì¬
 } ProcessState;
 
 /**
- * @brief è­¦æŠ¥çº§åˆ«æšä¸¾
+ * @brief ¾¯±¨¼¶±ğÃ¶¾Ù
  */
 typedef enum {
-    ALERT_NONE,         // æ— è­¦æŠ¥
-    ALERT_WARNING,      // è­¦å‘Š
-    ALERT_CRITICAL      // å±é™©
+    ALERT_NONE,         // ÎŞ¾¯±¨
+    ALERT_WARNING,      // ¾¯¸æ
+    ALERT_CRITICAL      // Î£ÏÕ
 } AlertLevel;
 
 /**
- * @brief æ˜¾ç¤ºæ¨¡å¼æšä¸¾
+ * @brief ÏÔÊ¾Ä£Ê½Ã¶¾Ù
  */
 typedef enum {
-    DISPLAY_MODE_NORMAL,    // æ­£å¸¸æ¨¡å¼
-    DISPLAY_MODE_NIGHT,     // å¤œé—´æ¨¡å¼
-    DISPLAY_MODE_DEMO       // æ¼”ç¤ºæ¨¡å¼
+    DISPLAY_MODE_NORMAL,    // Õı³£Ä£Ê½
+    DISPLAY_MODE_NIGHT,     // Ò¹¼äÄ£Ê½
+    DISPLAY_MODE_DEMO       // ÑİÊ¾Ä£Ê½
 } DisplayMode;
 
 /**
- * @brief ç²’å­æ•ˆæœæ•°æ®
+ * @brief Á£×ÓĞ§¹ûÊı¾İ
  */
 typedef struct {
     int8_t x, y;
@@ -65,78 +65,78 @@ typedef struct {
 } Particle;
 
 /**
- * @brief 3Dæ¨¡å‹é¡¶ç‚¹ç»“æ„
+ * @brief 3DÄ£ĞÍ¶¥µã½á¹¹
  */
 typedef struct {
-    int8_t x, y, z;        // 3Dåæ ‡
-    uint8_t transformed;    // è½¬åŒ–çŠ¶æ€
+    int8_t x, y, z;        // 3D×ø±ê
+    uint8_t transformed;    // ×ª»¯×´Ì¬
 } Vertex;
 
 /**
- * @brief ç³»ç»Ÿå‚æ•°ç»“æ„ä½“
+ * @brief ÏµÍ³²ÎÊı½á¹¹Ìå
  */
 typedef struct {
-    float pressure;         // å½“å‰å‹åŠ›å€¼
-    float temperature;      // å½“å‰æ¸©åº¦å€¼
-    AlertLevel alert;       // è­¦æŠ¥çº§åˆ«
-    uint16_t alert_count;   // è­¦æŠ¥è®¡æ•°
-    ProcessState state;     // å·¥è‰ºçŠ¶æ€
-    DisplayMode mode;       // æ˜¾ç¤ºæ¨¡å¼
-    uint8_t is_calibrated;  // æ ¡å‡†çŠ¶æ€
-    uint8_t motor_status;   // ç”µæœºçŠ¶æ€
+    float pressure;         // µ±Ç°Ñ¹Á¦Öµ
+    float temperature;      // µ±Ç°ÎÂ¶ÈÖµ
+    AlertLevel alert;       // ¾¯±¨¼¶±ğ
+    uint16_t alert_count;   // ¾¯±¨¼ÆÊı
+    ProcessState state;     // ¹¤ÒÕ×´Ì¬
+    DisplayMode mode;       // ÏÔÊ¾Ä£Ê½
+    uint8_t is_calibrated;  // Ğ£×¼×´Ì¬
+    uint8_t motor_status;   // µç»ú×´Ì¬
 } SystemParams;
 
 /**
- * @brief å…­é¢é¡¶å‹åŠ›æ•°æ®ç»“æ„
+ * @brief ÁùÃæ¶¥Ñ¹Á¦Êı¾İ½á¹¹
  */
 typedef struct {
-    float pressure[6];      // å…­ä¸ªé¢çš„å‹åŠ›å€¼
-    float temperature;      // æ¸©åº¦å€¼
-    float progress;         // è½¬åŒ–è¿›åº¦(0-100%)
-    uint32_t runtime;       // è¿è¡Œæ—¶é—´(ç§’)
-    ProcessState state;     // å·¥è‰ºçŠ¶æ€
-    DisplayMode mode;       // æ˜¾ç¤ºæ¨¡å¼
+    float pressure[6];      // Áù¸öÃæµÄÑ¹Á¦Öµ
+    float temperature;      // ÎÂ¶ÈÖµ
+    float progress;         // ×ª»¯½ø¶È(0-100%)
+    uint32_t runtime;       // ÔËĞĞÊ±¼ä(Ãë)
+    ProcessState state;     // ¹¤ÒÕ×´Ì¬
+    DisplayMode mode;       // ÏÔÊ¾Ä£Ê½
 } ProcessParams;
 
-/* èœå•é¡¹ç»“æ„ä½“ */
+/* ²Ëµ¥Ïî½á¹¹Ìå */
 typedef struct {
-    const char *text;      // èœå•é¡¹æ–‡æœ¬
-    int (*handler)(void);  // èœå•é¡¹å¤„ç†å‡½æ•°
+    const char *text;      // ²Ëµ¥ÏîÎÄ±¾
+    int (*handler)(void);  // ²Ëµ¥Ïî´¦Àíº¯Êı
 } MenuItem;
 
-/* å‡½æ•°å£°æ˜ */
+/* º¯ÊıÉùÃ÷ */
 
-/* ===== èœå•ç³»ç»Ÿå…¥å£å‡½æ•° ===== */
-int menu1(void);             // ç³»ç»Ÿä¸»èœå•å…¥å£ï¼Œæä¾›ä¸‰ä¸ªä¸»é€‰é¡¹
-int menu_main(void);         // å‘åå…¼å®¹çš„ä¸»èœå•å…¥å£ç‚¹ï¼Œè°ƒç”¨menu1()
+/* ===== ²Ëµ¥ÏµÍ³Èë¿Úº¯Êı ===== */
+int menu1(void);             // ÏµÍ³Ö÷²Ëµ¥Èë¿Ú£¬Ìá¹©Èı¸öÖ÷Ñ¡Ïî
+int menu_main(void);         // Ïòºó¼æÈİµÄÖ÷²Ëµ¥Èë¿Úµã£¬µ÷ÓÃmenu1()
 
-/* ===== ä¸»èœå•é¡µé¢ ===== */
-int menu_process(void);      // å·¥è‰ºè¿‡ç¨‹ç›‘æ§ç•Œé¢ï¼Œæ˜¾ç¤ºå‚æ•°å’Œ3Dæ¨¡å‹
-int menu2(void);             // å‚æ•°è®¾ç½®èœå•ï¼Œé€‰æ‹©è®¾ç½®å‚æ•°ç±»å‹
-int menu_settings(void);     // ç³»ç»Ÿè®¾ç½®èœå•ï¼Œæä¾›æ˜¾ç¤º/å£°éŸ³ç­‰è®¾ç½®
-int menu_history(void);      // å†å²è®°å½•æµè§ˆèœå•ï¼ŒæŸ¥çœ‹è¿‡å»å·¥è‰ºè®°å½•
+/* ===== Ö÷²Ëµ¥Ò³Ãæ ===== */
+int menu_process(void);      // ¹¤ÒÕ¹ı³Ì¼à¿Ø½çÃæ£¬ÏÔÊ¾²ÎÊıºÍ3DÄ£ĞÍ
+int menu2(void);             // ²ÎÊıÉèÖÃ²Ëµ¥£¬Ñ¡ÔñÉèÖÃ²ÎÊıÀàĞÍ
+int menu_settings(void);     // ÏµÍ³ÉèÖÃ²Ëµ¥£¬Ìá¹©ÏÔÊ¾/ÉùÒôµÈÉèÖÃ
+int menu_history(void);      // ÀúÊ·¼ÇÂ¼ä¯ÀÀ²Ëµ¥£¬²é¿´¹ıÈ¥¹¤ÒÕ¼ÇÂ¼
 
-/* ===== äºŒçº§èœå•é¡µé¢ ===== */
-int menu3_PressureSet(void);    // å‹åŠ›å‚æ•°è®¾ç½®ç•Œé¢
-int menu3_TemperatureSet(void); // æ¸©åº¦å‚æ•°è®¾ç½®ç•Œé¢
-int menu3_TimeSet(void);        // æ—¶é—´å‚æ•°è®¾ç½®ç•Œé¢
-int menu3_ProcessSelect(void);  // å·¥è‰ºé€‰æ‹©ç•Œé¢ï¼Œé€‰æ‹©é¢„è®¾å·¥è‰ºæ–¹æ¡ˆ
-int menu3_DataRecord(void);     // æ•°æ®è®°å½•ç•Œé¢ï¼ŒæŸ¥çœ‹å’Œå¯¼å‡ºæ•°æ®
-int menu3_SystemConfig(void);   // ç³»ç»Ÿé…ç½®ç•Œé¢ï¼Œä¼ æ„Ÿå™¨æ ¡å‡†å’Œç³»ç»Ÿè®¾ç½®
-int menu_motor_status(void);    // ç”µæœºçŠ¶æ€ç›‘æ§ç•Œé¢ï¼Œä¸‰è½´ç”µæœºå‚æ•°æ§åˆ¶
+/* ===== ¶ş¼¶²Ëµ¥Ò³Ãæ ===== */
+int menu3_PressureSet(void);    // Ñ¹Á¦²ÎÊıÉèÖÃ½çÃæ
+int menu3_TemperatureSet(void); // ÎÂ¶È²ÎÊıÉèÖÃ½çÃæ
+int menu3_TimeSet(void);        // Ê±¼ä²ÎÊıÉèÖÃ½çÃæ
+int menu3_ProcessSelect(void);  // ¹¤ÒÕÑ¡Ôñ½çÃæ£¬Ñ¡ÔñÔ¤Éè¹¤ÒÕ·½°¸
+int menu3_DataRecord(void);     // Êı¾İ¼ÇÂ¼½çÃæ£¬²é¿´ºÍµ¼³öÊı¾İ
+int menu3_SystemConfig(void);   // ÏµÍ³ÅäÖÃ½çÃæ£¬´«¸ĞÆ÷Ğ£×¼ºÍÏµÍ³ÉèÖÃ
+int menu_motor_status(void);    // µç»ú×´Ì¬¼à¿Ø½çÃæ£¬ÈıÖáµç»ú²ÎÊı¿ØÖÆ
 
-/* ===== ä¸‰çº§èœå•é¡µé¢ ===== */
-int menu4_Process1(void);       // å·¥è‰º1å‚æ•°è®¾ç½®
-int menu4_Process2(void);       // å·¥è‰º2å‚æ•°è®¾ç½®
-int menu4_Process3(void);       // å·¥è‰º3å‚æ•°è®¾ç½®
-int menu4_CalibrationP(void);   // å‹åŠ›ä¼ æ„Ÿå™¨æ ¡å‡†
-int menu4_CalibrationT(void);   // æ¸©åº¦ä¼ æ„Ÿå™¨æ ¡å‡†
-int menu4_AlarmConfig(void);    // è­¦æŠ¥é…ç½®ï¼Œè®¾ç½®è­¦æŠ¥é˜ˆå€¼
-int menu4_SystemInfo(void);     // ç³»ç»Ÿä¿¡æ¯ï¼Œæ˜¾ç¤ºç‰ˆæœ¬å’Œç¡¬ä»¶ä¿¡æ¯
+/* ===== Èı¼¶²Ëµ¥Ò³Ãæ ===== */
+int menu4_Process1(void);       // ¹¤ÒÕ1²ÎÊıÉèÖÃ
+int menu4_Process2(void);       // ¹¤ÒÕ2²ÎÊıÉèÖÃ
+int menu4_Process3(void);       // ¹¤ÒÕ3²ÎÊıÉèÖÃ
+int menu4_CalibrationP(void);   // Ñ¹Á¦´«¸ĞÆ÷Ğ£×¼
+int menu4_CalibrationT(void);   // ÎÂ¶È´«¸ĞÆ÷Ğ£×¼
+int menu4_AlarmConfig(void);    // ¾¯±¨ÅäÖÃ£¬ÉèÖÃ¾¯±¨ãĞÖµ
+int menu4_SystemInfo(void);     // ÏµÍ³ĞÅÏ¢£¬ÏÔÊ¾°æ±¾ºÍÓ²¼şĞÅÏ¢
 
-/* ===== å·¥è‰ºæ§åˆ¶å‡½æ•° ===== */
-int process_start(void);      // å¯åŠ¨å·¥è‰ºè¿‡ç¨‹
-int process_stop(void);       // åœæ­¢å·¥è‰ºè¿‡ç¨‹
-int process_pause(void);      // æš‚åœå·¥è‰ºè¿‡ç¨‹
+/* ===== ¹¤ÒÕ¿ØÖÆº¯Êı ===== */
+int process_start(void);      // Æô¶¯¹¤ÒÕ¹ı³Ì
+int process_stop(void);       // Í£Ö¹¹¤ÒÕ¹ı³Ì
+int process_pause(void);      // ÔİÍ£¹¤ÒÕ¹ı³Ì
 
 #endif /* __MENU_H__ */
