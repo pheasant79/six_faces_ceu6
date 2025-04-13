@@ -118,9 +118,9 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-	Motor_Run(1);
-	Motor_Run(0);
-	Motor_Run(2);
+//	Motor_Run(1);
+//	Motor_Run(0);
+//	Motor_Run(2);
 
 	while(1)
 	{

@@ -495,17 +495,21 @@ int menu_process(void)
     // 工艺阶段定义
     typedef enum {
         STAGE_READY,     // 准备阶段
+        STAGE_CALIBRATION, // 校准阶段
+        STAGE_PRESS_FAST, // 一次加压阶段（快速加压）
+        STAGE_PRESS_PRECISE, // 二次加压阶段（精确加压）
         STAGE_HEAT,      // 加热阶段
-        STAGE_PRESS,     // 加压阶段
-        STAGE_HOLD,      // 保持阶段
+        STAGE_HOLD,      // 保温保压阶段
         STAGE_COOL,      // 冷却阶段
+        STAGE_RELEASE,   // 卸压阶段
         STAGE_COMPLETE   // 完成阶段
     } ProcessStage;
     
     // 系统状态定义 - 与全局状态定义保持一致
-    ProcessStage current_stage = STAGE_READY;
+    ProcessStage current_stage = STAGE_READY; // 当前工艺阶段
     uint32_t stage_start_time = 0;
-    uint32_t stage_duration[] = {0, 10000, 15000, 20000, 10000, 0}; // 各阶段持续时间(ms)
+    // 各阶段持续时间(ms): 准备, 校准, 一次加压, 二次加压, 加热, 保压保温, 冷却, 卸压, 完成
+    uint32_t stage_duration[] = {0, 1000, 8000, 10000, 15000, 20000, 10000, 5000, 0}; 
     float target_temperature = 200.0f; // 目标温度
     float target_pressure = 5.0f;      // 目标压力
     float current_temperature = 25.0f;  // 当前温度
@@ -541,15 +545,15 @@ int menu_process(void)
                     OLED_Update();
                 } 
                 else if(current_stage == STAGE_READY && process_confirmed) {
-                    // 正式启动工艺流程
-                    current_stage = STAGE_HEAT;
+                    // 正式启动工艺流程，首先进入校准阶段
+                    current_stage = STAGE_CALIBRATION;
                     stage_start_time = HAL_GetTick();
                     g_sys_params.state = PROCESS_HEATING; // 更新系统状态
                     
-                    // 启动所有电机
+                    // 启动所有电机，设置为反向旋转进行校准
                     for(uint8_t i = 0; i < 3; i++) {
-                        Motor_SetDir(i, DIR_CW);     // 设置方向为顺时针
-                        Motor_SetSpeed(i, 100);      // 设置初始速度
+                        Motor_SetDir(i, DIR_CCW);    // 设置方向为逆时针（反方向）
+                        Motor_SetSpeed(i, 100);      // 设置校准速度
                         Motor_Run(i);                // 启动电机
                     }
                     motors_running = 1;
@@ -607,43 +611,89 @@ int menu_process(void)
             
             // 阶段转换逻辑
             switch(current_stage) {
-                case STAGE_HEAT:
-                    // 模拟温度上升
-                    current_temperature = 25.0f + (target_temperature - 25.0f) * 
-                                         ((float)elapsed_time / stage_duration[STAGE_HEAT]);
-                    
+                case STAGE_CALIBRATION:
+                    // 校准阶段 - 电机反向旋转1秒回到原点
                     // 更新进度
-                    g_process_params.progress = (float)elapsed_time / stage_duration[STAGE_HEAT] * 25.0f;
+                    g_process_params.progress = (float)elapsed_time / stage_duration[STAGE_CALIBRATION] * 10.0f;
                     
-                    // 阶段时间到，或者温度达到目标值，进入下一阶段
-                    if(elapsed_time >= stage_duration[STAGE_HEAT] || 
-                       current_temperature >= target_temperature) {
-                        current_stage = STAGE_PRESS;
+                    // 校准时间结束，进入一次加压阶段
+                    if(elapsed_time >= stage_duration[STAGE_CALIBRATION]) {
+                        current_stage = STAGE_PRESS_FAST;
                         stage_start_time = current_time;
                         g_sys_params.state = PROCESS_PRESSING;
                         
-                        // 温度达到目标，调整电机速度
+                        // 校准完成，调整电机方向和速度为快速加压
                         for(uint8_t i = 0; i < 3; i++) {
-                            Motor_SetSpeed(i, 500); // 增加速度
+                            Motor_SetDir(i, DIR_CW);     // 设置方向为顺时针
+                            Motor_SetSpeed(i, 500);      // 设置为高速
+                            Motor_Run(i);                // 启动电机
                         }
                     }
                     break;
                     
-                case STAGE_PRESS:
-                    // 模拟压力上升
-                    current_pressure = 0.0f + (target_pressure - 0.0f) * 
-                                      ((float)elapsed_time / stage_duration[STAGE_PRESS]);
+                case STAGE_PRESS_FAST:
+                    // 一次加压阶段 - 快速提升压力
+                    // 模拟压力上升 (达到目标压力的70%)
+                    current_pressure = 0.0f + (target_pressure * 0.7f) * 
+                                      ((float)elapsed_time / stage_duration[STAGE_PRESS_FAST]);
                     
-                    // 保持温度
-                    current_temperature = target_temperature;
+                    // 更新进度
+                    g_process_params.progress = 10.0f + 
+                                              (float)elapsed_time / stage_duration[STAGE_PRESS_FAST] * 15.0f;
+                    
+                    // 阶段时间到，或者压力达到目标值的70%，进入二次加压阶段
+                    if(elapsed_time >= stage_duration[STAGE_PRESS_FAST] || 
+                       current_pressure >= target_pressure * 0.7f) {
+                        current_stage = STAGE_PRESS_PRECISE;
+                        stage_start_time = current_time;
+                        
+                        // 调整电机速度为低速，提高精度
+                        for(uint8_t i = 0; i < 3; i++) {
+                            Motor_SetSpeed(i, 100); // 降低速度，提高精度
+                        }
+                    }
+                    break;
+                    
+                case STAGE_PRESS_PRECISE:
+                    // 二次加压阶段 - 精确加压到目标值
+                    // 模拟精确加压
+                    current_pressure = target_pressure * 0.7f + (target_pressure * 0.3f) * 
+                                      ((float)elapsed_time / stage_duration[STAGE_PRESS_PRECISE]);
                     
                     // 更新进度
                     g_process_params.progress = 25.0f + 
-                                              (float)elapsed_time / stage_duration[STAGE_PRESS] * 25.0f;
+                                              (float)elapsed_time / stage_duration[STAGE_PRESS_PRECISE] * 10.0f;
                     
-                    // 阶段时间到，或者压力达到目标值，进入下一阶段
-                    if(elapsed_time >= stage_duration[STAGE_PRESS] || 
+                    // 阶段时间到，或者压力达到目标值，进入加热阶段
+                    if(elapsed_time >= stage_duration[STAGE_PRESS_PRECISE] || 
                        current_pressure >= target_pressure) {
+                        current_stage = STAGE_HEAT;
+                        stage_start_time = current_time;
+                        g_sys_params.state = PROCESS_HEATING;
+                        
+                        // 保持电机运行但只是为了维持压力，不再增加压力
+                        for(uint8_t i = 0; i < 3; i++) {
+                            Motor_SetSpeed(i, 50); // 设置为最低速度，仅维持压力
+                        }
+                    }
+                    break;
+                    
+                case STAGE_HEAT:
+                    // 加热阶段 - 温度上升，保持压力
+                    // 模拟温度上升
+                    current_temperature = 25.0f + (target_temperature - 25.0f) * 
+                                         ((float)elapsed_time / stage_duration[STAGE_HEAT]);
+                    
+                    // 保持压力
+                    current_pressure = target_pressure;
+                    
+                    // 更新进度
+                    g_process_params.progress = 35.0f + 
+                                              (float)elapsed_time / stage_duration[STAGE_HEAT] * 15.0f;
+                    
+                    // 阶段时间到，或者温度达到目标值，进入保温保压阶段
+                    if(elapsed_time >= stage_duration[STAGE_HEAT] || 
+                       current_temperature >= target_temperature) {
                         current_stage = STAGE_HOLD;
                         stage_start_time = current_time;
                         g_sys_params.state = PROCESS_TRANSFORM;
@@ -651,40 +701,64 @@ int menu_process(void)
                     break;
                     
                 case STAGE_HOLD:
-                    // 保持温度和压力
+                    // 保温保压阶段 - 保持温度和压力
                     current_temperature = target_temperature;
                     current_pressure = target_pressure;
                     
                     // 更新进度
                     g_process_params.progress = 50.0f + 
-                                              (float)elapsed_time / stage_duration[STAGE_HOLD] * 25.0f;
+                                              (float)elapsed_time / stage_duration[STAGE_HOLD] * 20.0f;
                     
-                    // 阶段时间到，进入下一阶段
+                    // 阶段时间到，进入冷却阶段
                     if(elapsed_time >= stage_duration[STAGE_HOLD]) {
                         current_stage = STAGE_COOL;
                         stage_start_time = current_time;
                         g_sys_params.state = PROCESS_COOLING;
-                        
-                        // 进入冷却阶段，调整电机速度
-                        for(uint8_t i = 0; i < 3; i++) {
-                            Motor_SetSpeed(i, 100); // 降低速度
-                        }
                     }
                     break;
                     
                 case STAGE_COOL:
-                    // 模拟温度下降，保持压力
+                    // 冷却阶段 - 温度下降，保持压力
+                    // 模拟温度下降
                     current_temperature = target_temperature - (target_temperature - 25.0f) * 
                                          ((float)elapsed_time / stage_duration[STAGE_COOL]);
+                    
+                    // 保持压力
                     current_pressure = target_pressure;
                     
                     // 更新进度
-                    g_process_params.progress = 75.0f + 
-                                              (float)elapsed_time / stage_duration[STAGE_COOL] * 25.0f;
+                    g_process_params.progress = 70.0f + 
+                                              (float)elapsed_time / stage_duration[STAGE_COOL] * 15.0f;
                     
-                    // 阶段时间到，或者温度降到初始值，完成工艺
+                    // 阶段时间到，或者温度降到接近初始值，进入卸压阶段
                     if(elapsed_time >= stage_duration[STAGE_COOL] || 
                        current_temperature <= 30.0f) {
+                        current_stage = STAGE_RELEASE;
+                        stage_start_time = current_time;
+                        g_sys_params.state = PROCESS_IDLE;
+                        
+                        // 开始卸压，电机反转
+                        for(uint8_t i = 0; i < 3; i++) {
+                            Motor_SetDir(i, DIR_CCW);    // 设置方向为逆时针（反方向）
+                            Motor_SetSpeed(i, 300);      // 设置为中速卸压
+                            Motor_Run(i);                // 启动电机
+                        }
+                    }
+                    break;
+                    
+                case STAGE_RELEASE:
+                    // 卸压阶段 - 释放压力
+                    // 模拟压力下降
+                    current_pressure = target_pressure - target_pressure * 
+                                      ((float)elapsed_time / stage_duration[STAGE_RELEASE]);
+                    
+                    // 更新进度
+                    g_process_params.progress = 85.0f + 
+                                              (float)elapsed_time / stage_duration[STAGE_RELEASE] * 15.0f;
+                    
+                    // 阶段时间到，或者压力降到接近0，完成工艺
+                    if(elapsed_time >= stage_duration[STAGE_RELEASE] || 
+                       current_pressure <= 0.1f) {
                         current_stage = STAGE_COMPLETE;
                         g_sys_params.state = PROCESS_IDLE;
                         g_process_params.progress = 100.0f;
@@ -734,7 +808,8 @@ int menu_process(void)
             display_3d_model();
             
             // 显示阶段信息
-            const char *stage_names[] = {"准备中", "加热中", "加压中", "保持中", "冷却中", "已完成"};
+            const char *stage_names[] = {"准备中", "校准中", "一次加压", "二次加压", 
+                                         "加热中", "保温保压", "冷却中", "卸压中", "已完成"};
             OLED_ShowString(0, 0, (char*)stage_names[current_stage], OLED_8X16);
             
             // 显示压力条形图
