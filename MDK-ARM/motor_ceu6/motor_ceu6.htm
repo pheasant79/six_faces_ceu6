@@ -3,7 +3,7 @@
 <title>Static Call Graph - [motor_ceu6\motor_ceu6.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image motor_ceu6\motor_ceu6.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Sun Apr 13 16:14:28 2025
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Sun Apr 13 16:23:44 2025
 <BR><P>
 <H3>Maximum Stack Usage =        608 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -1378,7 +1378,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[d9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_PeriodElapsedCallback
 </UL>
 
-<P><STRONG><a name="[de]"></a>LED_PWM_Update</STRONG> (Thumb, 44 bytes, Stack size 0 bytes, menu.o(i.LED_PWM_Update))
+<P><STRONG><a name="[de]"></a>LED_PWM_Update</STRONG> (Thumb, 48 bytes, Stack size 0 bytes, menu.o(i.LED_PWM_Update))
 <BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = LED_PWM_Update &rArr; LED_TurnOn
 </UL>
 <BR>[Calls]<UL><LI><a href="#[e1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;LED_TurnOn
@@ -2053,7 +2053,7 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> menu.o(.constdata)
 </UL>
-<P><STRONG><a name="[4d]"></a>menu_process</STRONG> (Thumb, 1630 bytes, Stack size 168 bytes, menu.o(i.menu_process))
+<P><STRONG><a name="[4d]"></a>menu_process</STRONG> (Thumb, 1644 bytes, Stack size 168 bytes, menu.o(i.menu_process))
 <BR><BR>[Stack]<UL><LI>Max Depth = 608 + Unknown Stack Size
 <LI>Call Chain = menu_process &rArr; display_temperature &rArr; OLED_Printf &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>

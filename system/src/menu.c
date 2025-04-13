@@ -561,6 +561,9 @@ int menu_process(void)
                     stage_start_time = HAL_GetTick();
                     g_sys_params.state = PROCESS_HEATING; // 更新系统状态
                     
+                    // 重置LED状态，确保干净开始
+                    reset_led_state();
+                    
                     // 启动TIM5定时器，用于LED PWM控制
                     HAL_TIM_Base_Start_IT(&htim5);
                     g_led_enabled = 1; // 启用LED
@@ -603,9 +606,8 @@ int menu_process(void)
                     Motor_EmergencyStop();
                     motors_running = 0;
                     
-                    // 禁用LED
-                    g_led_enabled = 0;
-                    LED_TurnOff();
+                    // 完全重置LED状态
+                    reset_led_state();
                     
                     // 显示停止信息
                     OLED_Clear();
@@ -800,10 +802,9 @@ int menu_process(void)
                         OLED_ShowString(0, 16, "按任意键返回", OLED_8X16);
                         OLED_Update();
                         
-                        // 停止LED PWM控制
-                        g_led_enabled = 0;
+                        // 完全重置LED状态并停止定时器
+                        reset_led_state();
                         HAL_TIM_Base_Stop_IT(&htim5);
-                        LED_TurnOff(); // 确保LED关闭
                         
                         HAL_Delay(2000);
                     }
@@ -1609,4 +1610,15 @@ void LED_PWM_Update(void) {
         g_led_pwm_counter = 0;
         g_led_pwm_duty = 0;
     }
+}
+
+/**
+ * @brief 重置LED状态
+ * @note 清除所有LED相关变量，确保LED完全关闭
+ */
+static void reset_led_state(void) {
+    g_led_enabled = 0;     // 禁用LED
+    g_led_pwm_duty = 0;    // 清除占空比
+    g_led_pwm_counter = 0; // 重置计数器
+    LED_TurnOff();         // 物理关闭LED
 }
