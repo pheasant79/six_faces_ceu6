@@ -19,7 +19,6 @@
 
 /* 系统参数定义 */
 #define REFRESH_RATE_MS    100     // 刷新率(ms)
-#define MAX_PARTICLES      20      // 最大粒子数量
 #define WARNING_BLINK_MS   300     // 警告闪烁间隔时间
 #define ANIMATION_DURATION_MS 280  // 动画持续时间毫秒
 #define SCREEN_WIDTH       128     // OLED屏幕宽度像素
@@ -71,37 +70,6 @@ typedef enum {
 } DisplayMode;
 
 /**
- * @brief 动画粒子结构定义
- */
-typedef struct {
-    int8_t x, y;
-    int8_t dx, dy;
-    uint8_t active;
-} Particle;
-
-/**
- * @brief 3D顶点结构定义
- */
-typedef struct {
-    int8_t x, y, z;        // 3D坐标点
-    uint8_t transformed;    // 变换标志
-} Vertex;
-
-/**
- * @brief 系统参数结构定义
- */
-typedef struct {
-    float pressure;         // 当前压力值
-    float temperature;      // 当前温度值
-    AlertLevel alert;       // 当前告警级别
-    uint16_t alert_count;   // 告警计数器
-    ProcessState state;     // 处理状态
-    DisplayMode mode;       // 显示模式
-    uint8_t is_calibrated;  // 校准标志
-    uint8_t motor_status;   // 电机状态
-} SystemParams;
-
-/**
  * @brief 工艺处理参数结构定义
  */
 typedef struct {
@@ -119,16 +87,12 @@ typedef struct {
     int (*handler)(void);  // 菜单项处理函数指针
 } MenuItem;
 
-/* 菜单函数声明 */
+/* 菜单函数声明 - 只保留实际使用的函数 */
 
 /* ===== 主菜单和基本导航 ===== */
 int menu1(void);             // 开机动画和主菜单选择，返回选择的菜单编号
-int menu_main(void);         // 主菜单，显示系统状态和各功能入口，包含menu1()
-
-/* ===== 二级菜单函数 ===== */
-int menu_process(void);      // 工艺流程监控，显示当前生产过程及3D模型
 int menu2(void);             // 二级菜单，根据选择进入不同的功能设置界面
-int menu_settings(void);     // 设置菜单，包括参数设置/系统配置等功能
+int menu_process(void);      // 工艺流程监控，显示当前生产过程及3D模型
 int menu_history(void);      // 历史记录菜单，查看过去的生产数据和系统日志
 
 /* ===== 三级菜单函数组 ===== */
@@ -139,6 +103,7 @@ int menu3_ProcessSelect(void);  // 工艺选择界面，不同工艺过程
 int menu3_DataRecord(void);     // 数据记录界面，查看历史生产数据
 int menu3_SystemConfig(void);   // 系统配置界面，各种系统参数设置
 int menu_motor_status(void);    // 电机状态界面，控制电机运行和参数设定
+int menu3_MotorCalibration(void); // 电机校准界面
 
 /* ===== 四级菜单函数组 ===== */
 int menu4_Process1(void);       // 工艺1参数设置
@@ -148,10 +113,5 @@ int menu4_CalibrationP(void);   // 压力传感器校准
 int menu4_CalibrationT(void);   // 温度传感器校准
 int menu4_AlarmConfig(void);    // 报警设置，包括报警阈值和方式
 int menu4_SystemInfo(void);     // 系统信息界面，显示版本等信息
-
-/* ===== 流程控制函数 ===== */
-int process_start(void);      // 启动工艺流程
-int process_stop(void);       // 停止工艺流程
-int process_pause(void);      // 暂停工艺流程
 
 #endif /* __MENU_H__ */

@@ -6,6 +6,7 @@
 #define __MOTOR_H__
 
 #include "main.h"
+#include "stm32f4xx_hal.h"  // 添加此头文件以解决GPIO_TypeDef未定义的问题
 
 /*****************************************************
  * 电机引脚定义(采用平行四线驱动)
@@ -24,7 +25,6 @@
 
 /* 常量定义 */
 #define MOTOR_NUM           3     // 电机数量
-#define MOTOR_TIMEOUT     1000    // 超时时间(ms)
 
 /**
  * 电机状态返回枚举类型
@@ -69,7 +69,6 @@ typedef struct {
     
     /* 硬件资源 */
     TIM_HandleTypeDef* htim;      // 定时器句柄
-    DMA_HandleTypeDef* hdma;      // DMA句柄(当需要用到DMA时)
     GPIO_TypeDef* gpio_port;      // GPIO端口
     uint16_t pins;                // GPIO引脚掩码
 
@@ -84,11 +83,11 @@ typedef struct {
     uint32_t min_speed;           // 最小速度(步/秒)
     
     /* 状态参数 */
-    uint32_t step_counter;        // 电机行走步数
+    int32_t step_counter;        // 电机行走步数(有符号)
     uint32_t actual_speed;        // 实际速度
     
     /* 步数控制参数 */
-    uint32_t target_steps;        // 目标步数，0表示不限制
+    int32_t target_steps;        // 目标步数，0表示不限制(有符号)
     uint8_t step_control_enabled; // 步数监控启用标志，1表示启用
 } Motor;
 
@@ -115,30 +114,16 @@ Motor_Status Motor_SetDir(uint8_t id, Motor_Dir dir);
 // 设置指定电机速度(步/秒)
 Motor_Status Motor_SetSpeed(uint8_t id, uint32_t steps_per_sec);
 
-// 设置电机目标步数
-Motor_Status Motor_SetTargetSteps(uint8_t id, uint32_t steps);
-
-// 电机精调控制函数 - 少量步数微调
-Motor_Status Motor_FineTune(uint8_t id, uint32_t steps, Motor_Dir dir);
-
-// 电机加压控制函数 - 正向增加压力
-Motor_Status Motor_ApplyPressure(uint8_t id, uint32_t steps, uint32_t speed);
-
-// 电机卸压控制函数 - 反向释放压力
-Motor_Status Motor_ReleasePressure(uint8_t id, uint32_t steps, uint32_t speed);
-
 /*--------------------- 状态查询函数 ---------------------*/
-// 获取指定电机状态(MOTOR_STOP/MOTOR_RUNNING/MOTOR_ERROR)
-Motor_State Motor_GetState(uint8_t id);
 
 // 获取指定电机当前步数
-uint32_t Motor_GetStepCount(uint8_t id);
+int32_t Motor_GetStepCount(uint8_t id);
+
+// 设置指定电机当前步数
+Motor_Status Motor_SetStepCount(uint8_t id, int32_t steps);
 
 /*--------------------- 内部函数 ---------------------*/
 // 相位更新(定时器中断调用)
 void motor_update_phase(Motor *m);
-
-// 检查电机步数并在达到目标时停止
-void Motor_CheckStopBySteps(void);
 
 #endif /* __MOTOR_H__ */

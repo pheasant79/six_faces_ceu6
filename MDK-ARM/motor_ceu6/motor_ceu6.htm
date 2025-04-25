@@ -3,7 +3,7 @@
 <title>Static Call Graph - [motor_ceu6\motor_ceu6.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image motor_ceu6\motor_ceu6.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Fri Apr 25 13:56:45 2025
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Fri Apr 25 21:52:42 2025
 <BR><P>
 <H3>Maximum Stack Usage =        600 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -611,7 +611,7 @@ Global Symbols
 <BR>[Calls]<UL><LI><a href="#[49]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_sputc
 <LI><a href="#[98]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_printf_char_common
 </UL>
-<BR>[Called By]<UL><LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Printf
+<BR>[Called By]<UL><LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Printf
 </UL>
 
 <P><STRONG><a name="[116]"></a>__aeabi_memcpy4</STRONG> (Thumb, 0 bytes, Stack size 8 bytes, rt_memcpy_w.o(.text))
@@ -630,7 +630,7 @@ Global Symbols
 <BR><BR>[Stack]<UL><LI>Max Depth = 4<LI>Call Chain = __aeabi_memclr4
 </UL>
 <BR>[Called By]<UL><LI><a href="#[e2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_GPIO_Init
-<LI><a href="#[109]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemClock_Config
+<LI><a href="#[108]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemClock_Config
 </UL>
 
 <P><STRONG><a name="[146]"></a>__aeabi_memclr8</STRONG> (Thumb, 0 bytes, Stack size 4 bytes, rt_memclr_w.o(.text), UNUSED)
@@ -639,8 +639,8 @@ Global Symbols
 
 <P><STRONG><a name="[148]"></a>_memset_w</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, rt_memclr_w.o(.text), UNUSED)
 
-<P><STRONG><a name="[106]"></a>strcmp</STRONG> (Thumb, 128 bytes, Stack size 0 bytes, strcmpv7m.o(.text))
-<BR><BR>[Called By]<UL><LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<P><STRONG><a name="[105]"></a>strcmp</STRONG> (Thumb, 128 bytes, Stack size 0 bytes, strcmpv7m.o(.text))
+<BR><BR>[Called By]<UL><LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
 <LI><a href="#[4b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_get_lc_ctype
 <LI><a href="#[8b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_get_lc_numeric
 </UL>
@@ -1073,7 +1073,7 @@ Global Symbols
 <BR>[Calls]<UL><LI><a href="#[bc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
 </UL>
 <BR>[Called By]<UL><LI><a href="#[91]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
-<LI><a href="#[f6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_GPIO_Init
+<LI><a href="#[f5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_GPIO_Init
 <LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_process
 <LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_history
 <LI><a href="#[5a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu4_Process3
@@ -1094,8 +1094,8 @@ Global Symbols
 
 <P><STRONG><a name="[e1]"></a>HAL_GPIO_WritePin</STRONG> (Thumb, 10 bytes, Stack size 0 bytes, stm32f4xx_hal_gpio.o(i.HAL_GPIO_WritePin))
 <BR><BR>[Called By]<UL><LI><a href="#[e2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_GPIO_Init
-<LI><a href="#[f8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SDA
-<LI><a href="#[f7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SCL
+<LI><a href="#[f7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SDA
+<LI><a href="#[f6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SCL
 <LI><a href="#[df]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;LED_TurnOn
 <LI><a href="#[e0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;LED_TurnOff
 </UL>
@@ -1107,7 +1107,7 @@ Global Symbols
 <LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_process
 </UL>
 
-<P><STRONG><a name="[108]"></a>HAL_IncTick</STRONG> (Thumb, 12 bytes, Stack size 0 bytes, stm32f4xx_hal.o(i.HAL_IncTick))
+<P><STRONG><a name="[107]"></a>HAL_IncTick</STRONG> (Thumb, 12 bytes, Stack size 0 bytes, stm32f4xx_hal.o(i.HAL_IncTick))
 <BR><BR>[Called By]<UL><LI><a href="#[d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SysTick_Handler
 </UL>
 
@@ -1161,11 +1161,7 @@ Global Symbols
 <LI><a href="#[bf]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_InitTick
 <LI><a href="#[bc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
 </UL>
-<BR>[Called By]<UL><LI><a href="#[109]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemClock_Config
-</UL>
-
-<P><STRONG><a name="[f1]"></a>HAL_RCC_GetPCLK1Freq</STRONG> (Thumb, 20 bytes, Stack size 0 bytes, stm32f4xx_hal_rcc.o(i.HAL_RCC_GetPCLK1Freq))
-<BR><BR>[Called By]<UL><LI><a href="#[f0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_SetSpeed
+<BR>[Called By]<UL><LI><a href="#[108]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemClock_Config
 </UL>
 
 <P><STRONG><a name="[c5]"></a>HAL_RCC_GetSysClockFreq</STRONG> (Thumb, 88 bytes, Stack size 8 bytes, stm32f4xx_hal_rcc.o(i.HAL_RCC_GetSysClockFreq))
@@ -1181,7 +1177,7 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[bc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
 </UL>
-<BR>[Called By]<UL><LI><a href="#[109]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemClock_Config
+<BR>[Called By]<UL><LI><a href="#[108]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemClock_Config
 </UL>
 
 <P><STRONG><a name="[c1]"></a>HAL_SYSTICK_Config</STRONG> (Thumb, 40 bytes, Stack size 8 bytes, stm32f4xx_hal_cortex.o(i.HAL_SYSTICK_Config))
@@ -1233,10 +1229,9 @@ Global Symbols
 <P><STRONG><a name="[ee]"></a>HAL_TIM_Base_Start_IT</STRONG> (Thumb, 88 bytes, Stack size 0 bytes, stm32f4xx_hal_tim.o(i.HAL_TIM_Base_Start_IT))
 <BR><BR>[Called By]<UL><LI><a href="#[91]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 <LI><a href="#[ec]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_Run
-<LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_process
 </UL>
 
-<P><STRONG><a name="[f2]"></a>HAL_TIM_Base_Stop_IT</STRONG> (Thumb, 48 bytes, Stack size 0 bytes, stm32f4xx_hal_tim.o(i.HAL_TIM_Base_Stop_IT))
+<P><STRONG><a name="[f1]"></a>HAL_TIM_Base_Stop_IT</STRONG> (Thumb, 48 bytes, Stack size 0 bytes, stm32f4xx_hal_tim.o(i.HAL_TIM_Base_Stop_IT))
 <BR><BR>[Called By]<UL><LI><a href="#[dd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_Stop
 <LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_process
 </UL>
@@ -1284,7 +1279,7 @@ Global Symbols
 <BR><BR>[Called By]<UL><LI><a href="#[d1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_IRQHandler
 </UL>
 
-<P><STRONG><a name="[d5]"></a>HAL_TIM_PeriodElapsedCallback</STRONG> (Thumb, 158 bytes, Stack size 16 bytes, stm32f4xx_it.o(i.HAL_TIM_PeriodElapsedCallback))
+<P><STRONG><a name="[d5]"></a>HAL_TIM_PeriodElapsedCallback</STRONG> (Thumb, 150 bytes, Stack size 16 bytes, stm32f4xx_it.o(i.HAL_TIM_PeriodElapsedCallback))
 <BR><BR>[Stack]<UL><LI>Max Depth = 40<LI>Call Chain = HAL_TIM_PeriodElapsedCallback &rArr; Key_Tick
 </UL>
 <BR>[Calls]<UL><LI><a href="#[db]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;motor_update_phase
@@ -1307,8 +1302,8 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f411xe.o(RESET)
 </UL>
-<P><STRONG><a name="[110]"></a>Key_GetNum</STRONG> (Thumb, 10 bytes, Stack size 0 bytes, key.o(i.Key_GetNum))
-<BR><BR>[Called By]<UL><LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu1
+<P><STRONG><a name="[10f]"></a>Key_GetNum</STRONG> (Thumb, 10 bytes, Stack size 0 bytes, key.o(i.Key_GetNum))
+<BR><BR>[Called By]<UL><LI><a href="#[10e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu1
 <LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_process
 <LI><a href="#[55]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_motor_status
 <LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_history
@@ -1326,7 +1321,7 @@ Global Symbols
 <LI><a href="#[4d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu2
 </UL>
 
-<P><STRONG><a name="[10b]"></a>Key_Init</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, key.o(i.Key_Init))
+<P><STRONG><a name="[10a]"></a>Key_Init</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, key.o(i.Key_Init))
 <BR><BR>[Called By]<UL><LI><a href="#[91]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
@@ -1433,20 +1428,20 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_process
 </UL>
 
-<P><STRONG><a name="[dc]"></a>Motor_GetStepCount</STRONG> (Thumb, 26 bytes, Stack size 0 bytes, motor.o(i.Motor_GetStepCount))
+<P><STRONG><a name="[dc]"></a>Motor_GetStepCount</STRONG> (Thumb, 22 bytes, Stack size 0 bytes, motor.o(i.Motor_GetStepCount))
 <BR><BR>[Called By]<UL><LI><a href="#[d5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_PeriodElapsedCallback
 <LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_process
 <LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu3_MotorCalibration
 </UL>
 
-<P><STRONG><a name="[10e]"></a>Motor_InitAll</STRONG> (Thumb, 48 bytes, Stack size 12 bytes, motor.o(i.Motor_InitAll))
+<P><STRONG><a name="[10d]"></a>Motor_InitAll</STRONG> (Thumb, 44 bytes, Stack size 12 bytes, motor.o(i.Motor_InitAll))
 <BR><BR>[Stack]<UL><LI>Max Depth = 12<LI>Call Chain = Motor_InitAll
 </UL>
 <BR>[Called By]<UL><LI><a href="#[91]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 <LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu3_MotorCalibration
 </UL>
 
-<P><STRONG><a name="[ec]"></a>Motor_Run</STRONG> (Thumb, 70 bytes, Stack size 16 bytes, motor.o(i.Motor_Run))
+<P><STRONG><a name="[ec]"></a>Motor_Run</STRONG> (Thumb, 66 bytes, Stack size 16 bytes, motor.o(i.Motor_Run))
 <BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = Motor_Run
 </UL>
 <BR>[Calls]<UL><LI><a href="#[ee]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_Base_Start_IT
@@ -1456,7 +1451,7 @@ Global Symbols
 <LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu3_MotorCalibration
 </UL>
 
-<P><STRONG><a name="[ef]"></a>Motor_SetDir</STRONG> (Thumb, 42 bytes, Stack size 16 bytes, motor.o(i.Motor_SetDir))
+<P><STRONG><a name="[ef]"></a>Motor_SetDir</STRONG> (Thumb, 38 bytes, Stack size 16 bytes, motor.o(i.Motor_SetDir))
 <BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = Motor_SetDir
 </UL>
 <BR>[Calls]<UL><LI><a href="#[ed]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;validate_motor_id
@@ -1465,20 +1460,23 @@ Global Symbols
 <LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu3_MotorCalibration
 </UL>
 
-<P><STRONG><a name="[f0]"></a>Motor_SetSpeed</STRONG> (Thumb, 160 bytes, Stack size 32 bytes, motor.o(i.Motor_SetSpeed))
-<BR><BR>[Stack]<UL><LI>Max Depth = 32<LI>Call Chain = Motor_SetSpeed
-</UL>
-<BR>[Calls]<UL><LI><a href="#[f1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_RCC_GetPCLK1Freq
-<LI><a href="#[ed]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;validate_motor_id
-</UL>
-<BR>[Called By]<UL><LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_process
+<P><STRONG><a name="[110]"></a>Motor_SetSpeed</STRONG> (Thumb, 4 bytes, Stack size 0 bytes, motor.o(i.Motor_SetSpeed))
+<BR><BR>[Called By]<UL><LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_process
 <LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu3_MotorCalibration
 </UL>
 
-<P><STRONG><a name="[dd]"></a>Motor_Stop</STRONG> (Thumb, 60 bytes, Stack size 8 bytes, motor.o(i.Motor_Stop))
+<P><STRONG><a name="[f0]"></a>Motor_SetStepCount</STRONG> (Thumb, 30 bytes, Stack size 16 bytes, motor.o(i.Motor_SetStepCount))
+<BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = Motor_SetStepCount
+</UL>
+<BR>[Calls]<UL><LI><a href="#[ed]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;validate_motor_id
+</UL>
+<BR>[Called By]<UL><LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu3_MotorCalibration
+</UL>
+
+<P><STRONG><a name="[dd]"></a>Motor_Stop</STRONG> (Thumb, 56 bytes, Stack size 8 bytes, motor.o(i.Motor_Stop))
 <BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = Motor_Stop
 </UL>
-<BR>[Calls]<UL><LI><a href="#[f2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_Base_Stop_IT
+<BR>[Calls]<UL><LI><a href="#[f1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_Base_Stop_IT
 <LI><a href="#[ed]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;validate_motor_id
 </UL>
 <BR>[Called By]<UL><LI><a href="#[d5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_PeriodElapsedCallback
@@ -1493,12 +1491,12 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f411xe.o(RESET)
 </UL>
-<P><STRONG><a name="[fe]"></a>OLED_Clear</STRONG> (Thumb, 34 bytes, Stack size 8 bytes, oled.o(i.OLED_Clear))
+<P><STRONG><a name="[fd]"></a>OLED_Clear</STRONG> (Thumb, 34 bytes, Stack size 8 bytes, oled.o(i.OLED_Clear))
 <BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = OLED_Clear
 </UL>
-<BR>[Called By]<UL><LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Init
+<BR>[Called By]<UL><LI><a href="#[fb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Init
 <LI><a href="#[91]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
-<LI><a href="#[10a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;display_menu_items
+<LI><a href="#[109]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;display_menu_items
 <LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_process
 <LI><a href="#[55]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_motor_status
 <LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_history
@@ -1516,91 +1514,91 @@ Global Symbols
 <LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu3_DataRecord
 </UL>
 
-<P><STRONG><a name="[105]"></a>OLED_ClearArea</STRONG> (Thumb, 86 bytes, Stack size 20 bytes, oled.o(i.OLED_ClearArea))
+<P><STRONG><a name="[104]"></a>OLED_ClearArea</STRONG> (Thumb, 86 bytes, Stack size 20 bytes, oled.o(i.OLED_ClearArea))
 <BR><BR>[Stack]<UL><LI>Max Depth = 20<LI>Call Chain = OLED_ClearArea
 </UL>
-<BR>[Called By]<UL><LI><a href="#[104]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowImage
+<BR>[Called By]<UL><LI><a href="#[103]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowImage
 </UL>
 
-<P><STRONG><a name="[f3]"></a>OLED_DrawLine</STRONG> (Thumb, 234 bytes, Stack size 36 bytes, oled.o(i.OLED_DrawLine))
+<P><STRONG><a name="[f2]"></a>OLED_DrawLine</STRONG> (Thumb, 234 bytes, Stack size 36 bytes, oled.o(i.OLED_DrawLine))
 <BR><BR>[Stack]<UL><LI>Max Depth = 44<LI>Call Chain = OLED_DrawLine &rArr; OLED_DrawPoint
 </UL>
-<BR>[Calls]<UL><LI><a href="#[f4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_DrawPoint
+<BR>[Calls]<UL><LI><a href="#[f3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_DrawPoint
 </UL>
 <BR>[Called By]<UL><LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_process
 </UL>
 
-<P><STRONG><a name="[f4]"></a>OLED_DrawPoint</STRONG> (Thumb, 48 bytes, Stack size 8 bytes, oled.o(i.OLED_DrawPoint))
+<P><STRONG><a name="[f3]"></a>OLED_DrawPoint</STRONG> (Thumb, 48 bytes, Stack size 8 bytes, oled.o(i.OLED_DrawPoint))
 <BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = OLED_DrawPoint
 </UL>
-<BR>[Called By]<UL><LI><a href="#[f5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_DrawRectangle
-<LI><a href="#[f3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_DrawLine
+<BR>[Called By]<UL><LI><a href="#[f4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_DrawRectangle
+<LI><a href="#[f2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_DrawLine
 </UL>
 
-<P><STRONG><a name="[f5]"></a>OLED_DrawRectangle</STRONG> (Thumb, 116 bytes, Stack size 28 bytes, oled.o(i.OLED_DrawRectangle))
+<P><STRONG><a name="[f4]"></a>OLED_DrawRectangle</STRONG> (Thumb, 116 bytes, Stack size 28 bytes, oled.o(i.OLED_DrawRectangle))
 <BR><BR>[Stack]<UL><LI>Max Depth = 36<LI>Call Chain = OLED_DrawRectangle &rArr; OLED_DrawPoint
 </UL>
-<BR>[Calls]<UL><LI><a href="#[f4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_DrawPoint
+<BR>[Calls]<UL><LI><a href="#[f3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_DrawPoint
 </UL>
 <BR>[Called By]<UL><LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_process
 </UL>
 
-<P><STRONG><a name="[f6]"></a>OLED_GPIO_Init</STRONG> (Thumb, 24 bytes, Stack size 8 bytes, oled.o(i.OLED_GPIO_Init))
+<P><STRONG><a name="[f5]"></a>OLED_GPIO_Init</STRONG> (Thumb, 24 bytes, Stack size 8 bytes, oled.o(i.OLED_GPIO_Init))
 <BR><BR>[Stack]<UL><LI>Max Depth = 24<LI>Call Chain = OLED_GPIO_Init &rArr; HAL_Delay
 </UL>
 <BR>[Calls]<UL><LI><a href="#[bb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
-<LI><a href="#[f8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SDA
-<LI><a href="#[f7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SCL
+<LI><a href="#[f7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SDA
+<LI><a href="#[f6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SCL
 </UL>
-<BR>[Called By]<UL><LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Init
+<BR>[Called By]<UL><LI><a href="#[fb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Init
 </UL>
 
-<P><STRONG><a name="[f9]"></a>OLED_I2C_SendByte</STRONG> (Thumb, 58 bytes, Stack size 16 bytes, oled.o(i.OLED_I2C_SendByte))
+<P><STRONG><a name="[f8]"></a>OLED_I2C_SendByte</STRONG> (Thumb, 58 bytes, Stack size 16 bytes, oled.o(i.OLED_I2C_SendByte))
 <BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = OLED_I2C_SendByte
 </UL>
-<BR>[Calls]<UL><LI><a href="#[f8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SDA
-<LI><a href="#[f7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SCL
+<BR>[Calls]<UL><LI><a href="#[f7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SDA
+<LI><a href="#[f6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SCL
 </UL>
-<BR>[Called By]<UL><LI><a href="#[107]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_WriteData
-<LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_WriteCommand
+<BR>[Called By]<UL><LI><a href="#[106]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_WriteData
+<LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_WriteCommand
 </UL>
 
-<P><STRONG><a name="[fa]"></a>OLED_I2C_Start</STRONG> (Thumb, 30 bytes, Stack size 8 bytes, oled.o(i.OLED_I2C_Start))
+<P><STRONG><a name="[f9]"></a>OLED_I2C_Start</STRONG> (Thumb, 30 bytes, Stack size 8 bytes, oled.o(i.OLED_I2C_Start))
 <BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = OLED_I2C_Start
 </UL>
-<BR>[Calls]<UL><LI><a href="#[f8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SDA
-<LI><a href="#[f7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SCL
+<BR>[Calls]<UL><LI><a href="#[f7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SDA
+<LI><a href="#[f6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SCL
 </UL>
-<BR>[Called By]<UL><LI><a href="#[107]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_WriteData
-<LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_WriteCommand
+<BR>[Called By]<UL><LI><a href="#[106]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_WriteData
+<LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_WriteCommand
 </UL>
 
-<P><STRONG><a name="[fb]"></a>OLED_I2C_Stop</STRONG> (Thumb, 24 bytes, Stack size 8 bytes, oled.o(i.OLED_I2C_Stop))
+<P><STRONG><a name="[fa]"></a>OLED_I2C_Stop</STRONG> (Thumb, 24 bytes, Stack size 8 bytes, oled.o(i.OLED_I2C_Stop))
 <BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = OLED_I2C_Stop
 </UL>
-<BR>[Calls]<UL><LI><a href="#[f8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SDA
-<LI><a href="#[f7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SCL
+<BR>[Calls]<UL><LI><a href="#[f7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SDA
+<LI><a href="#[f6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_W_SCL
 </UL>
-<BR>[Called By]<UL><LI><a href="#[107]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_WriteData
-<LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_WriteCommand
+<BR>[Called By]<UL><LI><a href="#[106]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_WriteData
+<LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_WriteCommand
 </UL>
 
-<P><STRONG><a name="[fc]"></a>OLED_Init</STRONG> (Thumb, 156 bytes, Stack size 8 bytes, oled.o(i.OLED_Init))
+<P><STRONG><a name="[fb]"></a>OLED_Init</STRONG> (Thumb, 156 bytes, Stack size 8 bytes, oled.o(i.OLED_Init))
 <BR><BR>[Stack]<UL><LI>Max Depth = 56<LI>Call Chain = OLED_Init &rArr; OLED_Update &rArr; OLED_WriteData &rArr; OLED_I2C_SendByte
 </UL>
-<BR>[Calls]<UL><LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
-<LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_WriteCommand
-<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
-<LI><a href="#[f6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_GPIO_Init
+<BR>[Calls]<UL><LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
+<LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_WriteCommand
+<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<LI><a href="#[f5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_GPIO_Init
 </UL>
 <BR>[Called By]<UL><LI><a href="#[91]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[100]"></a>OLED_Printf</STRONG> (Thumb, 42 bytes, Stack size 288 bytes, oled.o(i.OLED_Printf))
+<P><STRONG><a name="[ff]"></a>OLED_Printf</STRONG> (Thumb, 42 bytes, Stack size 288 bytes, oled.o(i.OLED_Printf))
 <BR><BR>[Stack]<UL><LI>Max Depth = 416 + Unknown Stack Size
 <LI>Call Chain = OLED_Printf &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<BR>[Calls]<UL><LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
 <LI><a href="#[97]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;vsprintf
 </UL>
 <BR>[Called By]<UL><LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_process
@@ -1611,40 +1609,40 @@ Global Symbols
 <LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu3_MotorCalibration
 </UL>
 
-<P><STRONG><a name="[102]"></a>OLED_SetCursor</STRONG> (Thumb, 34 bytes, Stack size 8 bytes, oled.o(i.OLED_SetCursor))
+<P><STRONG><a name="[101]"></a>OLED_SetCursor</STRONG> (Thumb, 34 bytes, Stack size 8 bytes, oled.o(i.OLED_SetCursor))
 <BR><BR>[Stack]<UL><LI>Max Depth = 32<LI>Call Chain = OLED_SetCursor &rArr; OLED_WriteCommand &rArr; OLED_I2C_SendByte
 </UL>
-<BR>[Calls]<UL><LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_WriteCommand
+<BR>[Calls]<UL><LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_WriteCommand
 </UL>
-<BR>[Called By]<UL><LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<BR>[Called By]<UL><LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
 </UL>
 
-<P><STRONG><a name="[103]"></a>OLED_ShowChar</STRONG> (Thumb, 52 bytes, Stack size 8 bytes, oled.o(i.OLED_ShowChar))
+<P><STRONG><a name="[102]"></a>OLED_ShowChar</STRONG> (Thumb, 52 bytes, Stack size 8 bytes, oled.o(i.OLED_ShowChar))
 <BR><BR>[Stack]<UL><LI>Max Depth = 64<LI>Call Chain = OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[104]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowImage
+<BR>[Calls]<UL><LI><a href="#[103]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowImage
 </UL>
-<BR>[Called By]<UL><LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<BR>[Called By]<UL><LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
 </UL>
 
-<P><STRONG><a name="[104]"></a>OLED_ShowImage</STRONG> (Thumb, 186 bytes, Stack size 36 bytes, oled.o(i.OLED_ShowImage))
+<P><STRONG><a name="[103]"></a>OLED_ShowImage</STRONG> (Thumb, 186 bytes, Stack size 36 bytes, oled.o(i.OLED_ShowImage))
 <BR><BR>[Stack]<UL><LI>Max Depth = 56<LI>Call Chain = OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[105]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ClearArea
+<BR>[Calls]<UL><LI><a href="#[104]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ClearArea
 </UL>
-<BR>[Called By]<UL><LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
-<LI><a href="#[103]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowChar
+<BR>[Called By]<UL><LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<LI><a href="#[102]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowChar
 </UL>
 
-<P><STRONG><a name="[101]"></a>OLED_ShowString</STRONG> (Thumb, 210 bytes, Stack size 64 bytes, oled.o(i.OLED_ShowString))
+<P><STRONG><a name="[100]"></a>OLED_ShowString</STRONG> (Thumb, 210 bytes, Stack size 64 bytes, oled.o(i.OLED_ShowString))
 <BR><BR>[Stack]<UL><LI>Max Depth = 128<LI>Call Chain = OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[104]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowImage
-<LI><a href="#[103]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowChar
-<LI><a href="#[106]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;strcmp
+<BR>[Calls]<UL><LI><a href="#[103]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowImage
+<LI><a href="#[102]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowChar
+<LI><a href="#[105]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;strcmp
 </UL>
-<BR>[Called By]<UL><LI><a href="#[10a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;display_menu_items
-<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Printf
+<BR>[Called By]<UL><LI><a href="#[109]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;display_menu_items
+<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Printf
 <LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_process
 <LI><a href="#[55]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_motor_status
 <LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_history
@@ -1662,14 +1660,14 @@ Global Symbols
 <LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu3_DataRecord
 </UL>
 
-<P><STRONG><a name="[ff]"></a>OLED_Update</STRONG> (Thumb, 34 bytes, Stack size 16 bytes, oled.o(i.OLED_Update))
+<P><STRONG><a name="[fe]"></a>OLED_Update</STRONG> (Thumb, 34 bytes, Stack size 16 bytes, oled.o(i.OLED_Update))
 <BR><BR>[Stack]<UL><LI>Max Depth = 48<LI>Call Chain = OLED_Update &rArr; OLED_WriteData &rArr; OLED_I2C_SendByte
 </UL>
-<BR>[Calls]<UL><LI><a href="#[107]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_WriteData
-<LI><a href="#[102]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_SetCursor
+<BR>[Calls]<UL><LI><a href="#[106]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_WriteData
+<LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_SetCursor
 </UL>
-<BR>[Called By]<UL><LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Init
-<LI><a href="#[10a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;display_menu_items
+<BR>[Called By]<UL><LI><a href="#[fb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Init
+<LI><a href="#[109]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;display_menu_items
 <LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_process
 <LI><a href="#[55]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_motor_status
 <LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_history
@@ -1687,49 +1685,49 @@ Global Symbols
 <LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu3_DataRecord
 </UL>
 
-<P><STRONG><a name="[f7]"></a>OLED_W_SCL</STRONG> (Thumb, 12 bytes, Stack size 0 bytes, oled.o(i.OLED_W_SCL))
+<P><STRONG><a name="[f6]"></a>OLED_W_SCL</STRONG> (Thumb, 12 bytes, Stack size 0 bytes, oled.o(i.OLED_W_SCL))
 <BR><BR>[Calls]<UL><LI><a href="#[e1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_WritePin
 </UL>
-<BR>[Called By]<UL><LI><a href="#[fb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_Stop
-<LI><a href="#[fa]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_Start
-<LI><a href="#[f9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_SendByte
-<LI><a href="#[f6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_GPIO_Init
+<BR>[Called By]<UL><LI><a href="#[fa]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_Stop
+<LI><a href="#[f9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_Start
+<LI><a href="#[f8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_SendByte
+<LI><a href="#[f5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_GPIO_Init
 </UL>
 
-<P><STRONG><a name="[f8]"></a>OLED_W_SDA</STRONG> (Thumb, 12 bytes, Stack size 0 bytes, oled.o(i.OLED_W_SDA))
+<P><STRONG><a name="[f7]"></a>OLED_W_SDA</STRONG> (Thumb, 12 bytes, Stack size 0 bytes, oled.o(i.OLED_W_SDA))
 <BR><BR>[Calls]<UL><LI><a href="#[e1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_WritePin
 </UL>
-<BR>[Called By]<UL><LI><a href="#[fb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_Stop
-<LI><a href="#[fa]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_Start
-<LI><a href="#[f9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_SendByte
-<LI><a href="#[f6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_GPIO_Init
+<BR>[Called By]<UL><LI><a href="#[fa]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_Stop
+<LI><a href="#[f9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_Start
+<LI><a href="#[f8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_SendByte
+<LI><a href="#[f5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_GPIO_Init
 </UL>
 
-<P><STRONG><a name="[fd]"></a>OLED_WriteCommand</STRONG> (Thumb, 34 bytes, Stack size 8 bytes, oled.o(i.OLED_WriteCommand))
+<P><STRONG><a name="[fc]"></a>OLED_WriteCommand</STRONG> (Thumb, 34 bytes, Stack size 8 bytes, oled.o(i.OLED_WriteCommand))
 <BR><BR>[Stack]<UL><LI>Max Depth = 24<LI>Call Chain = OLED_WriteCommand &rArr; OLED_I2C_SendByte
 </UL>
-<BR>[Calls]<UL><LI><a href="#[fb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_Stop
-<LI><a href="#[fa]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_Start
-<LI><a href="#[f9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_SendByte
+<BR>[Calls]<UL><LI><a href="#[fa]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_Stop
+<LI><a href="#[f9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_Start
+<LI><a href="#[f8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_SendByte
 </UL>
-<BR>[Called By]<UL><LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Init
-<LI><a href="#[102]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_SetCursor
+<BR>[Called By]<UL><LI><a href="#[fb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Init
+<LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_SetCursor
 </UL>
 
-<P><STRONG><a name="[107]"></a>OLED_WriteData</STRONG> (Thumb, 48 bytes, Stack size 16 bytes, oled.o(i.OLED_WriteData))
+<P><STRONG><a name="[106]"></a>OLED_WriteData</STRONG> (Thumb, 48 bytes, Stack size 16 bytes, oled.o(i.OLED_WriteData))
 <BR><BR>[Stack]<UL><LI>Max Depth = 32<LI>Call Chain = OLED_WriteData &rArr; OLED_I2C_SendByte
 </UL>
-<BR>[Calls]<UL><LI><a href="#[fb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_Stop
-<LI><a href="#[fa]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_Start
-<LI><a href="#[f9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_SendByte
+<BR>[Calls]<UL><LI><a href="#[fa]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_Stop
+<LI><a href="#[f9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_Start
+<LI><a href="#[f8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_I2C_SendByte
 </UL>
-<BR>[Called By]<UL><LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<BR>[Called By]<UL><LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
 </UL>
 
 <P><STRONG><a name="[c]"></a>PendSV_Handler</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, stm32f4xx_it.o(i.PendSV_Handler))
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f411xe.o(RESET)
 </UL>
-<P><STRONG><a name="[10c]"></a>Pressure_Init</STRONG> (Thumb, 24 bytes, Stack size 0 bytes, pressure.o(i.Pressure_Init))
+<P><STRONG><a name="[10b]"></a>Pressure_Init</STRONG> (Thumb, 24 bytes, Stack size 0 bytes, pressure.o(i.Pressure_Init))
 <BR><BR>[Called By]<UL><LI><a href="#[91]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
@@ -1745,11 +1743,11 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[d]"></a>SysTick_Handler</STRONG> (Thumb, 4 bytes, Stack size 0 bytes, stm32f4xx_it.o(i.SysTick_Handler))
-<BR><BR>[Calls]<UL><LI><a href="#[108]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_IncTick
+<BR><BR>[Calls]<UL><LI><a href="#[107]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_IncTick
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f411xe.o(RESET)
 </UL>
-<P><STRONG><a name="[109]"></a>SystemClock_Config</STRONG> (Thumb, 136 bytes, Stack size 88 bytes, main.o(i.SystemClock_Config))
+<P><STRONG><a name="[108]"></a>SystemClock_Config</STRONG> (Thumb, 136 bytes, Stack size 88 bytes, main.o(i.SystemClock_Config))
 <BR><BR>[Stack]<UL><LI>Max Depth = 176<LI>Call Chain = SystemClock_Config &rArr; HAL_RCC_ClockConfig &rArr; HAL_RCC_GetSysClockFreq &rArr; __aeabi_uldivmod
 </UL>
 <BR>[Calls]<UL><LI><a href="#[c7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_RCC_OscConfig
@@ -1802,7 +1800,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[cc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_ConfigClockSource
 </UL>
 
-<P><STRONG><a name="[10d]"></a>Temperature_Init</STRONG> (Thumb, 24 bytes, Stack size 0 bytes, temperature.o(i.Temperature_Init))
+<P><STRONG><a name="[10c]"></a>Temperature_Init</STRONG> (Thumb, 24 bytes, Stack size 0 bytes, temperature.o(i.Temperature_Init))
 <BR><BR>[Called By]<UL><LI><a href="#[91]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
@@ -1827,31 +1825,31 @@ Global Symbols
 <P><STRONG><a name="[91]"></a>main</STRONG> (Thumb, 86 bytes, Stack size 0 bytes, main.o(i.main))
 <BR><BR>[Stack]<UL><LI>Max Depth = 176<LI>Call Chain = main &rArr; SystemClock_Config &rArr; HAL_RCC_ClockConfig &rArr; HAL_RCC_GetSysClockFreq &rArr; __aeabi_uldivmod
 </UL>
-<BR>[Calls]<UL><LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu1
-<LI><a href="#[10d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Temperature_Init
-<LI><a href="#[10c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Pressure_Init
-<LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Init
-<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
-<LI><a href="#[10e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_InitAll
+<BR>[Calls]<UL><LI><a href="#[10e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu1
+<LI><a href="#[10c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Temperature_Init
+<LI><a href="#[10b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Pressure_Init
+<LI><a href="#[fb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Init
+<LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
+<LI><a href="#[10d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_InitAll
 <LI><a href="#[ea]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_TIM5_Init
 <LI><a href="#[e9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_TIM4_Init
 <LI><a href="#[e8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_TIM3_Init
 <LI><a href="#[e5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_TIM2_Init
 <LI><a href="#[e2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_GPIO_Init
-<LI><a href="#[10b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_Init
+<LI><a href="#[10a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_Init
 <LI><a href="#[ee]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_Base_Start_IT
 <LI><a href="#[bd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Init
 <LI><a href="#[bb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
-<LI><a href="#[109]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemClock_Config
+<LI><a href="#[108]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemClock_Config
 </UL>
 <BR>[Called By]<UL><LI><a href="#[90]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__rt_entry_main
 </UL>
 
-<P><STRONG><a name="[10f]"></a>menu1</STRONG> (Thumb, 90 bytes, Stack size 0 bytes, menu.o(i.menu1))
+<P><STRONG><a name="[10e]"></a>menu1</STRONG> (Thumb, 90 bytes, Stack size 0 bytes, menu.o(i.menu1))
 <BR><BR>[Stack]<UL><LI>Max Depth = 160<LI>Call Chain = menu1 &rArr; display_menu_items &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[10a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;display_menu_items
-<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
+<BR>[Calls]<UL><LI><a href="#[109]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;display_menu_items
+<LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
 </UL>
 <BR>[Called By]<UL><LI><a href="#[91]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 <LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_process
@@ -1860,37 +1858,38 @@ Global Symbols
 <P><STRONG><a name="[4d]"></a>menu2</STRONG> (Thumb, 104 bytes, Stack size 24 bytes, menu.o(i.menu2))
 <BR><BR>[Stack]<UL><LI>Max Depth = 184<LI>Call Chain = menu2 &rArr; display_menu_items &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[10a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;display_menu_items
-<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
+<BR>[Calls]<UL><LI><a href="#[109]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;display_menu_items
+<LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> menu.o(.constdata)
 </UL>
 <P><STRONG><a name="[53]"></a>menu3_DataRecord</STRONG> (Thumb, 50 bytes, Stack size 8 bytes, menu.o(i.menu3_DataRecord))
 <BR><BR>[Stack]<UL><LI>Max Depth = 136<LI>Call Chain = menu3_DataRecord &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
-<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
-<LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
-<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
+<BR>[Calls]<UL><LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
+<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> menu.o(.constdata)
 </UL>
-<P><STRONG><a name="[56]"></a>menu3_MotorCalibration</STRONG> (Thumb, 876 bytes, Stack size 48 bytes, menu.o(i.menu3_MotorCalibration))
+<P><STRONG><a name="[56]"></a>menu3_MotorCalibration</STRONG> (Thumb, 796 bytes, Stack size 48 bytes, menu.o(i.menu3_MotorCalibration))
 <BR><BR>[Stack]<UL><LI>Max Depth = 600 + Unknown Stack Size
 <LI>Call Chain = menu3_MotorCalibration &rArr; menu_process &rArr; OLED_Printf &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
 <BR>[Calls]<UL><LI><a href="#[dd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_Stop
 <LI><a href="#[dc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_GetStepCount
-<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
-<LI><a href="#[10e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_InitAll
+<LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
+<LI><a href="#[10d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_InitAll
 <LI><a href="#[bb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
-<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
-<LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
-<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Printf
-<LI><a href="#[f0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_SetSpeed
+<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Printf
+<LI><a href="#[f0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_SetStepCount
+<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_SetSpeed
 <LI><a href="#[ef]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_SetDir
 <LI><a href="#[ec]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_Run
-<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
+<LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
 <LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_process
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> menu.o(.constdata)
@@ -1899,11 +1898,11 @@ Global Symbols
 <BR><BR>[Stack]<UL><LI>Max Depth = 448 + Unknown Stack Size
 <LI>Call Chain = menu3_PressureSet &rArr; OLED_Printf &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
-<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
-<LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
-<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Printf
-<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
+<BR>[Calls]<UL><LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
+<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Printf
+<LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
 <LI><a href="#[112]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_f2d
 <LI><a href="#[113]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Set_Pressure
 <LI><a href="#[111]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Get_Pressure
@@ -1913,16 +1912,16 @@ Global Symbols
 <P><STRONG><a name="[52]"></a>menu3_ProcessSelect</STRONG> (Thumb, 104 bytes, Stack size 24 bytes, menu.o(i.menu3_ProcessSelect))
 <BR><BR>[Stack]<UL><LI>Max Depth = 184<LI>Call Chain = menu3_ProcessSelect &rArr; display_menu_items &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[10a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;display_menu_items
-<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
+<BR>[Calls]<UL><LI><a href="#[109]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;display_menu_items
+<LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> menu.o(.constdata)
 </UL>
 <P><STRONG><a name="[54]"></a>menu3_SystemConfig</STRONG> (Thumb, 104 bytes, Stack size 24 bytes, menu.o(i.menu3_SystemConfig))
 <BR><BR>[Stack]<UL><LI>Max Depth = 184<LI>Call Chain = menu3_SystemConfig &rArr; display_menu_items &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[10a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;display_menu_items
-<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
+<BR>[Calls]<UL><LI><a href="#[109]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;display_menu_items
+<LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> menu.o(.constdata)
 </UL>
@@ -1930,11 +1929,11 @@ Global Symbols
 <BR><BR>[Stack]<UL><LI>Max Depth = 448 + Unknown Stack Size
 <LI>Call Chain = menu3_TemperatureSet &rArr; OLED_Printf &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
-<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
-<LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
-<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Printf
-<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
+<BR>[Calls]<UL><LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
+<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Printf
+<LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
 <LI><a href="#[112]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_f2d
 <LI><a href="#[115]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Set_Temperature
 <LI><a href="#[114]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Get_Temperature
@@ -1945,93 +1944,93 @@ Global Symbols
 <BR><BR>[Stack]<UL><LI>Max Depth = 448 + Unknown Stack Size
 <LI>Call Chain = menu3_TimeSet &rArr; OLED_Printf &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
-<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
-<LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
-<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Printf
-<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
+<BR>[Calls]<UL><LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
+<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Printf
+<LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> menu.o(.constdata)
 </UL>
 <P><STRONG><a name="[5d]"></a>menu4_AlarmConfig</STRONG> (Thumb, 50 bytes, Stack size 8 bytes, menu.o(i.menu4_AlarmConfig))
 <BR><BR>[Stack]<UL><LI>Max Depth = 136<LI>Call Chain = menu4_AlarmConfig &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
-<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
-<LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
-<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
+<BR>[Calls]<UL><LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
+<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> menu.o(.constdata)
 </UL>
 <P><STRONG><a name="[5b]"></a>menu4_CalibrationP</STRONG> (Thumb, 50 bytes, Stack size 8 bytes, menu.o(i.menu4_CalibrationP))
 <BR><BR>[Stack]<UL><LI>Max Depth = 136<LI>Call Chain = menu4_CalibrationP &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
-<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
-<LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
-<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
+<BR>[Calls]<UL><LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
+<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> menu.o(.constdata)
 </UL>
 <P><STRONG><a name="[5c]"></a>menu4_CalibrationT</STRONG> (Thumb, 50 bytes, Stack size 8 bytes, menu.o(i.menu4_CalibrationT))
 <BR><BR>[Stack]<UL><LI>Max Depth = 136<LI>Call Chain = menu4_CalibrationT &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
-<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
-<LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
-<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
+<BR>[Calls]<UL><LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
+<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> menu.o(.constdata)
 </UL>
 <P><STRONG><a name="[58]"></a>menu4_Process1</STRONG> (Thumb, 86 bytes, Stack size 8 bytes, menu.o(i.menu4_Process1))
 <BR><BR>[Stack]<UL><LI>Max Depth = 136<LI>Call Chain = menu4_Process1 &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
+<BR>[Calls]<UL><LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
 <LI><a href="#[bb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
-<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
-<LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> menu.o(.constdata)
 </UL>
 <P><STRONG><a name="[59]"></a>menu4_Process2</STRONG> (Thumb, 86 bytes, Stack size 8 bytes, menu.o(i.menu4_Process2))
 <BR><BR>[Stack]<UL><LI>Max Depth = 136<LI>Call Chain = menu4_Process2 &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
+<BR>[Calls]<UL><LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
 <LI><a href="#[bb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
-<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
-<LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> menu.o(.constdata)
 </UL>
 <P><STRONG><a name="[5a]"></a>menu4_Process3</STRONG> (Thumb, 86 bytes, Stack size 8 bytes, menu.o(i.menu4_Process3))
 <BR><BR>[Stack]<UL><LI>Max Depth = 136<LI>Call Chain = menu4_Process3 &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
+<BR>[Calls]<UL><LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
 <LI><a href="#[bb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
-<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
-<LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> menu.o(.constdata)
 </UL>
 <P><STRONG><a name="[57]"></a>menu4_SystemInfo</STRONG> (Thumb, 74 bytes, Stack size 8 bytes, menu.o(i.menu4_SystemInfo))
 <BR><BR>[Stack]<UL><LI>Max Depth = 136<LI>Call Chain = menu4_SystemInfo &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
-<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
-<LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
-<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
+<BR>[Calls]<UL><LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
+<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> menu.o(.constdata)
 </UL>
 <P><STRONG><a name="[4e]"></a>menu_history</STRONG> (Thumb, 144 bytes, Stack size 24 bytes, menu.o(i.menu_history))
 <BR><BR>[Stack]<UL><LI>Max Depth = 184<LI>Call Chain = menu_history &rArr; display_menu_items &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
+<BR>[Calls]<UL><LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
 <LI><a href="#[bb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
-<LI><a href="#[10a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;display_menu_items
-<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
-<LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
-<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
+<LI><a href="#[109]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;display_menu_items
+<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> menu.o(.constdata)
 </UL>
@@ -2039,38 +2038,37 @@ Global Symbols
 <BR><BR>[Stack]<UL><LI>Max Depth = 488 + Unknown Stack Size
 <LI>Call Chain = menu_motor_status &rArr; OLED_Printf &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
-<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
-<LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
-<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Printf
-<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
+<BR>[Calls]<UL><LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
+<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Printf
+<LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
 <LI><a href="#[112]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_f2d
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> menu.o(.constdata)
 </UL>
-<P><STRONG><a name="[4c]"></a>menu_process</STRONG> (Thumb, 3156 bytes, Stack size 136 bytes, menu.o(i.menu_process))
+<P><STRONG><a name="[4c]"></a>menu_process</STRONG> (Thumb, 3938 bytes, Stack size 136 bytes, menu.o(i.menu_process))
 <BR><BR>[Stack]<UL><LI>Max Depth = 552 + Unknown Stack Size
 <LI>Call Chain = menu_process &rArr; OLED_Printf &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
 <BR>[Calls]<UL><LI><a href="#[dc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_GetStepCount
-<LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu1
-<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
-<LI><a href="#[ee]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_Base_Start_IT
+<LI><a href="#[10e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu1
+<LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
 <LI><a href="#[bb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
 <LI><a href="#[bc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
-<LI><a href="#[f2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_Base_Stop_IT
+<LI><a href="#[f1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_Base_Stop_IT
 <LI><a href="#[118]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;update_temperature_led
 <LI><a href="#[117]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;reset_led_state
-<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
-<LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
-<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Printf
-<LI><a href="#[f5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_DrawRectangle
-<LI><a href="#[f3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_DrawLine
-<LI><a href="#[f0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_SetSpeed
+<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Printf
+<LI><a href="#[f4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_DrawRectangle
+<LI><a href="#[f2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_DrawLine
+<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_SetSpeed
 <LI><a href="#[ef]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_SetDir
 <LI><a href="#[ec]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_Run
 <LI><a href="#[eb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_EmergencyStop
-<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
+<LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_GetNum
 <LI><a href="#[112]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_f2d
 <LI><a href="#[116]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memcpy4
 </UL>
@@ -2085,7 +2083,7 @@ Global Symbols
 <P><STRONG><a name="[8b]"></a>_get_lc_numeric</STRONG> (Thumb, 44 bytes, Stack size 8 bytes, lc_numeric_c.o(locale$$code))
 <BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = _get_lc_numeric
 </UL>
-<BR>[Calls]<UL><LI><a href="#[106]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;strcmp
+<BR>[Calls]<UL><LI><a href="#[105]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;strcmp
 </UL>
 <BR>[Called By]<UL><LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__rt_lib_init_lc_numeric_2
 </UL>
@@ -2093,7 +2091,7 @@ Global Symbols
 <P><STRONG><a name="[4b]"></a>_get_lc_ctype</STRONG> (Thumb, 44 bytes, Stack size 8 bytes, lc_ctype_c.o(locale$$code))
 <BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = _get_lc_ctype
 </UL>
-<BR>[Calls]<UL><LI><a href="#[106]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;strcmp
+<BR>[Calls]<UL><LI><a href="#[105]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;strcmp
 </UL>
 <BR>[Called By]<UL><LI><a href="#[89]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__rt_lib_init_lc_ctype_2
 </UL>
@@ -2173,19 +2171,19 @@ Local Symbols
 
 <P><STRONG><a name="[ed]"></a>validate_motor_id</STRONG> (Thumb, 12 bytes, Stack size 0 bytes, motor.o(i.validate_motor_id))
 <BR><BR>[Called By]<UL><LI><a href="#[dd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_Stop
-<LI><a href="#[f0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_SetSpeed
+<LI><a href="#[f0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_SetStepCount
 <LI><a href="#[ef]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_SetDir
 <LI><a href="#[ec]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Motor_Run
 </UL>
 
-<P><STRONG><a name="[10a]"></a>display_menu_items</STRONG> (Thumb, 84 bytes, Stack size 32 bytes, menu.o(i.display_menu_items))
+<P><STRONG><a name="[109]"></a>display_menu_items</STRONG> (Thumb, 84 bytes, Stack size 32 bytes, menu.o(i.display_menu_items))
 <BR><BR>[Stack]<UL><LI>Max Depth = 160<LI>Call Chain = display_menu_items &rArr; OLED_ShowString &rArr; OLED_ShowChar &rArr; OLED_ShowImage &rArr; OLED_ClearArea
 </UL>
-<BR>[Calls]<UL><LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
-<LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
-<LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
+<BR>[Calls]<UL><LI><a href="#[fd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Clear
+<LI><a href="#[fe]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_Update
+<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OLED_ShowString
 </UL>
-<BR>[Called By]<UL><LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu1
+<BR>[Called By]<UL><LI><a href="#[10e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu1
 <LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu_history
 <LI><a href="#[54]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu3_SystemConfig
 <LI><a href="#[52]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;menu3_ProcessSelect

@@ -21,8 +21,6 @@ uint8_t current_motor = 0;                 // 当前选择的电机ID
 /* 校准保存的步数值 - 各电机加压所需步数 */
 static uint32_t calibrated_steps[MOTOR_NUM] = {STEP_COUNT_FULL_PRESSURE, STEP_COUNT_FULL_PRESSURE, STEP_COUNT_FULL_PRESSURE};
 
-/* 为motor.c提供的外部变量 - 电机目标步数数组 */
-uint32_t motor_target_steps[MOTOR_NUM] = {0, 0, 0};
 
 /* 外部变量声明 */
 extern TIM_HandleTypeDef htim5;  // TIM5句柄，用于LED PWM控制
@@ -142,12 +140,29 @@ int menu_process(void)
     current_stage = STAGE_READY;
     
     // 各阶段持续时间(ms): 准备, 校准, 加压, 加热, 保压保温, 冷却, 卸压, 完成
-    // 加热、保温和冷却阶段仍然基于时间控制
-    uint32_t stage_duration[] = {0, 1000, 18000, 15000, 20000, 10000, 5000, 0}; 
-    uint32_t stage_start_time = 0;
-    uint32_t current_time = 0;
-    uint32_t elapsed_time = 0;
-    uint32_t current_steps = 0;
+    uint32_t stage_duration[] = {0, 1000, 18000, 15000, 20000, 10000, 5000, 0}; // 每个工艺阶段的持续时间，单位毫秒
+    uint32_t stage_start_time = 0;    // 当前阶段的开始时间戳，用于计算已经过时间
+    uint32_t current_time = 0;        // 当前系统时间戳，用于计算时间差
+    uint32_t elapsed_time = 0;        // 当前阶段已经过的时间，等于current_time减去stage_start_time
+    uint32_t total_seconds = 0;       // 工艺总耗时（秒），用于最终显示
+    uint32_t minutes = 0;             // 分钟数，用于时间显示
+    uint32_t seconds = 0;             // 秒数，用于时间显示
+    uint32_t remaining_time = 0;      // 当前阶段剩余时间，用于倒计时显示
+    
+    // 进度相关变量
+    float progress = 0.0f;            // 当前阶段总进度(0.0-1.0)
+    float release_progress = 0.0f;    // 卸压总进度(0.0-1.0)
+    float calib_progress_x = 0.0f;    // X轴校准进度(0.0-1.0)
+    float calib_progress_y = 0.0f;    // Y轴校准进度(0.0-1.0)
+    float calib_progress_z = 0.0f;    // Z轴校准进度(0.0-1.0)
+    float calib_progress = 0.0f;      // 总校准进度，取三轴最小值(0.0-1.0)
+    float press_progress_x = 0.0f;    // X轴加压进度(0.0-1.0)
+    float press_progress_y = 0.0f;    // Y轴加压进度(0.0-1.0)
+    float press_progress_z = 0.0f;    // Z轴加压进度(0.0-1.0)
+    float release_progress_x = 0.0f;  // X轴卸压进度(0.0-1.0)
+    float release_progress_y = 0.0f;  // Y轴卸压进度(0.0-1.0)
+    float release_progress_z = 0.0f;  // Z轴卸压进度(0.0-1.0)
+    uint8_t bar_width = 0;            // 进度条显示宽度，用于OLED显示
     
     // 初始化电机目标步数数组
     for(uint8_t i = 0; i < MOTOR_NUM; i++) {
@@ -176,6 +191,7 @@ int menu_process(void)
     {
         KeyNum = Key_GetNum();
         
+        //按键判断
         switch(KeyNum)
         {
             case 3: // 启动/确认
@@ -203,9 +219,6 @@ int menu_process(void)
                     for(uint8_t i = 0; i < 3; i++) {
                         Motor_SetDir(i, DIR_CCW);    // 设置方向为逆时针（反方向）
                         Motor_SetSpeed(i, CALIBRATION_SPEED);      // 设置校准速度
-                        
-                        // 获取当前步数作为初始值，用于计算校准进度
-                        uint32_t initial_steps = Motor_GetStepCount(i);
                         
                         // 设置目标步数为0，表示需要减少到0
                         motors[i].target_steps = 0;
@@ -278,29 +291,32 @@ int menu_process(void)
             current_time = HAL_GetTick();
             elapsed_time = current_time - stage_start_time;
             
-            // 获取当前电机步数
-            current_steps = Motor_GetStepCount(0); // 以0号电机为参考
-            
             // 计算进度 - 在界面渲染前先更新工艺进度
             switch(current_stage) {
                 case STAGE_CALIBRATION:
                     // 校准阶段 - 所有电机反转回到原点
-                    // 使用初始步数和当前步数计算进度
+                    // 使用所有电机的步数计算进度
                     
-                    // 进度计算方式：当步数从初始值减少到0时，进度从0增加到100%
-                    if(initial_calibration_steps > 0) {
-                        // 计算已完成的百分比
-                        float completed_pct = 1.0f - (float)current_steps / (float)initial_calibration_steps;
-                        if(completed_pct < 0.0f) completed_pct = 0.0f;
-                        if(completed_pct > 1.0f) completed_pct = 1.0f;
-                        
-                        // 进度从0%到10%（在整个工艺中的比例）
-                        g_process_params.progress = completed_pct * 10.0f;
-                    }
+                    // 计算所有电机的校准进度
+                    calib_progress_x = (float)(initial_calibration_steps - Motor_GetStepCount(0)) / initial_calibration_steps;
+                    calib_progress_y = (float)(initial_calibration_steps - Motor_GetStepCount(1)) / initial_calibration_steps;
+                    calib_progress_z = (float)(initial_calibration_steps - Motor_GetStepCount(2)) / initial_calibration_steps;
                     
-                    // 基于步数判断校准是否完成，进入加压阶段
-                    // 电机停止逻辑已移到TIM中断处理，这里只检查是否已停止并自动启动下一阶段
-                    if(motors[0].state != MOTOR_RUNNING) {
+                    // 取最小值作为整体进度
+                    calib_progress = calib_progress_x;
+                    if(calib_progress_y < calib_progress) calib_progress = calib_progress_y;
+                    if(calib_progress_z < calib_progress) calib_progress = calib_progress_z;
+                    
+                    if(calib_progress < 0.0f) calib_progress = 0.0f;
+                    if(calib_progress > 1.0f) calib_progress = 1.0f;
+                    
+                    // 进度从0%到10%（在整个工艺中的比例）
+                    g_process_params.progress = calib_progress * 10.0f;
+                    
+                    // 基于所有电机的步数判断校准是否完成
+                    if(motors[0].state != MOTOR_RUNNING && 
+                       motors[1].state != MOTOR_RUNNING &&
+                       motors[2].state != MOTOR_RUNNING) {
                         // 自动进入加压阶段
                         current_stage = STAGE_PRESS_FAST;
                         stage_start_time = current_time;
@@ -321,15 +337,26 @@ int menu_process(void)
                 
                 case STAGE_PRESS_FAST:
                     // 加压阶段 - 提升压力至目标值
-                    // 模拟压力上升
-                    current_pressure = target_pressure * ((float)current_steps / (motors[0].target_steps));
+                    // 计算三个电机的加压进度，以最小进度作为整体进度
+                    press_progress_x = (float)Motor_GetStepCount(0) / calibrated_steps[0];
+                    press_progress_y = (float)Motor_GetStepCount(1) / calibrated_steps[1];
+                    press_progress_z = (float)Motor_GetStepCount(2) / calibrated_steps[2];
+                    
+                    // 使用最小进度作为整体进度计算压力
+                    progress = press_progress_x;
+                    if(press_progress_y < progress) progress = press_progress_y;
+                    if(press_progress_z < progress) progress = press_progress_z;
+                    
+                    // 模拟压力上升 - 基于整体进度
+                    current_pressure = target_pressure * progress;
                     
                     // 更新进度
-                    g_process_params.progress = 10.0f + (float)current_steps / (motors[0].target_steps) * 25.0f;
+                    g_process_params.progress = 10.0f + progress * 25.0f;
                     
-                    // 基于步数判断加压是否完成，进入加热阶段
-                    // 电机停止逻辑已移到TIM中断处理，这里只检查是否已停止并自动启动下一阶段
-                    if(motors[0].state != MOTOR_RUNNING) {
+                    // 基于所有电机的步数判断加压是否完成
+                    if(motors[0].state != MOTOR_RUNNING && 
+                       motors[1].state != MOTOR_RUNNING &&
+                       motors[2].state != MOTOR_RUNNING) {
                         // 自动进入加热阶段
                         current_stage = STAGE_HEAT;
                         stage_start_time = current_time;
@@ -424,59 +451,59 @@ int menu_process(void)
                     
                 case STAGE_RELEASE:
                     // 卸压阶段 - 松开压力
-                    // 显示实时压力下降
-                    {
-                        float release_ratio = 1.0f - ((float)current_steps / STEP_COUNT_FULL_PRESSURE);
-                        if(release_ratio < 0.0f) release_ratio = 0.0f;
-                        current_pressure = target_pressure * release_ratio;
+                    // 计算各个电机的卸压进度
+                    release_progress_x = (float)(calibrated_steps[0] - Motor_GetStepCount(0)) / calibrated_steps[0];
+                    release_progress_y = (float)(calibrated_steps[1] - Motor_GetStepCount(1)) / calibrated_steps[1];
+                    release_progress_z = (float)(calibrated_steps[2] - Motor_GetStepCount(2)) / calibrated_steps[2];
+                    
+                    // 取最小值作为整体进度
+                    release_progress = release_progress_x;
+                    if(release_progress_y < release_progress) release_progress = release_progress_y;
+                    if(release_progress_z < release_progress) release_progress = release_progress_z;
+                    
+                    // 确保比例值在0-1之间
+                    if(release_progress < 0.0f) release_progress = 0.0f;
+                    if(release_progress > 1.0f) release_progress = 1.0f;
+                    
+                    // 压力从最大值逐渐减小到0 - 基于整体进度
+                    current_pressure = target_pressure * (1.0f - release_progress);
+                    
+                    // 更新进度
+                    g_process_params.progress = 85.0f + release_progress * 15.0f;
+                    
+                    // 判断卸压完成 - 检查所有电机
+                    if(motors[0].state != MOTOR_RUNNING && 
+                       motors[1].state != MOTOR_RUNNING &&
+                       motors[2].state != MOTOR_RUNNING) {
+                        // 自动进入完成阶段
+                        current_stage = STAGE_COMPLETE;
                         
-                        // 更新进度
-                        g_process_params.progress = 85.0f + (1.0f - release_ratio) * 15.0f;
+                        // 完成所有工艺流程
+                        // 重置LED状态
+                        reset_led_state();
                         
-                        // 判断卸压完成，进入完成阶段
-                        // 电机停止逻辑已移到TIM中断处理，这里只检查是否已停止并自动启动下一阶段
-                        if(motors[0].state != MOTOR_RUNNING) {
-                            // 自动进入完成阶段
-                            current_stage = STAGE_COMPLETE;
-                            
-                            // 完成所有工艺流程
-                            // 重置LED状态
-                            reset_led_state();
-                            
-                            // 临时禁用定时器，完成后重新启用
-                            HAL_TIM_Base_Stop_IT(&htim5);
-                            
-                            // 显示工艺完成界面
-                            OLED_Clear();
-                            OLED_ShowString(0, 0, "工艺流程完成", OLED_8X16);
-                            OLED_ShowString(0, 16, "总耗时:", OLED_8X16);
-                            uint32_t total_seconds = (HAL_GetTick() - stage_start_time) / 1000;
-                            uint32_t minutes = total_seconds / 60;
-                            uint32_t seconds = total_seconds % 60;
-                            OLED_Printf(56, 16, OLED_8X16, "%02lu:%02lu", minutes, seconds);
-                            OLED_ShowString(0, 32, "按键确认返回", OLED_8X16);
-                            OLED_Update();
-                            
-                            // 等待用户确认
-                            while(1) {
-                                KeyNum = Key_GetNum();
-                                if(KeyNum == 3 || KeyNum == 4) {
-                                    break;
-                                }
-                                HAL_Delay(50); // 短暂延时，避免过快响应
-                            }
-                            
-                            // 重新启用定时器，恢复按键扫描功能
-                            HAL_TIM_Base_Start_IT(&htim5);
-                            
-                            // 返回准备状态
-
-                            process_confirmed = 0;
-                            oled_update_needed = 1;
-                            motors_running = 0; // 确保标记电机已停止
-                            
-                            HAL_Delay(2000);
-                        }
+                        // 临时禁用定时器，完成后重新启用
+                        HAL_TIM_Base_Stop_IT(&htim5);
+                        
+                        // 显示工艺完成界面
+                        OLED_Clear();
+                        OLED_ShowString(0, 0, "工艺流程完成", OLED_8X16);
+                        OLED_ShowString(0, 16, "总耗时:", OLED_8X16);
+                        total_seconds = (HAL_GetTick() - stage_start_time) / 1000;
+                        minutes = total_seconds / 60;
+                        seconds = total_seconds % 60;
+                        OLED_Printf(56, 16, OLED_8X16, "%02lu:%02lu", minutes, seconds);
+                        OLED_ShowString(0, 32, "按键4返回", OLED_8X16);
+                        OLED_Update();
+                        
+                        current_stage = STAGE_READY;
+                        process_confirmed = 0;
+                        motors_running = 0; // 确保标记电机已停止
+                        oled_update_needed = 1;
+                        
+                        HAL_Delay(2000);
+                        return 0; // 直接返回上级菜单
+                       
                     }
                     break;
                     
@@ -513,23 +540,46 @@ int menu_process(void)
                     OLED_Clear();
                     OLED_ShowString(0, 0, "电机校准中", OLED_8X16);
                     
-                    // 显示步数信息
-                    OLED_ShowString(0, 16, "当前步数:", OLED_8X16);
-                    OLED_Printf(70, 16, OLED_8X16, "%lu", current_steps);
+                    // 显示X、Y、Z三个电机的步数信息
+                    OLED_ShowString(0, 16, "X:", OLED_8X16);
+                    OLED_Printf(16, 16, OLED_8X16, "%lu/0", 
+                              Motor_GetStepCount(0));
                     
-                    // 显示初始步数和目标步数
-                    OLED_ShowString(0, 32, "初始/目标:", OLED_8X16);
-                    OLED_Printf(70, 32, OLED_8X16, "%lu/0", initial_calibration_steps);
+                    OLED_ShowString(0, 32, "Y:", OLED_8X16);
+                    OLED_Printf(16, 32, OLED_8X16, "%lu/0", 
+                              Motor_GetStepCount(1));
                     
-                    // 显示进度条
-                    OLED_DrawRectangle(0, 48, 100, 8, 0);
-                    uint8_t bar_width = (uint8_t)(g_process_params.progress * 10.0f);
-                    if(bar_width > 100) bar_width = 100;
+                    OLED_ShowString(0, 48, "Z:", OLED_8X16);
+                    OLED_Printf(16, 48, OLED_8X16, "%lu/0", 
+                              Motor_GetStepCount(2));
+                    
+                    // 右侧竖向进度条 - 取三个电机中进度最小的作为整体进度
+                    OLED_DrawRectangle(120, 16, 8, 48, 0);
+                    
+                    // 计算三个电机的校准进度
+                    calib_progress_x = (float)(initial_calibration_steps - Motor_GetStepCount(0)) / initial_calibration_steps;
+                    calib_progress_y = (float)(initial_calibration_steps - Motor_GetStepCount(1)) / initial_calibration_steps;
+                    calib_progress_z = (float)(initial_calibration_steps - Motor_GetStepCount(2)) / initial_calibration_steps;
+                    
+                    // 取最小值作为整体进度
+                    calib_progress = calib_progress_x;
+                    if(calib_progress_y < calib_progress) calib_progress = calib_progress_y;
+                    if(calib_progress_z < calib_progress) calib_progress = calib_progress_z;
+                    
+                    // 规范化进度值
+                    if(calib_progress < 0.0f) calib_progress = 0.0f;
+                    if(calib_progress > 1.0f) calib_progress = 1.0f;
+                    
+                    // 计算进度条宽度
+                    bar_width = (uint8_t)(calib_progress * 48);
+                    if(bar_width > 48) bar_width = 48;
+                    
                     for(uint8_t i = 0; i < bar_width; i++) {
-                        OLED_DrawLine(i, 49, i, 55);
+                        OLED_DrawLine(121, 63 - i, 127, 63 - i);
                     }
-                    // 显示进度百分比
-                    OLED_Printf(105, 48, OLED_8X16, "%d%%", (int)(g_process_params.progress * 10));
+                    
+                    // 更新进度参数，用于其他地方显示
+                    g_process_params.progress = calib_progress * 10.0f;
                     break;
                     
                 case STAGE_PRESS_FAST:
@@ -537,28 +587,48 @@ int menu_process(void)
                     // 显示标题和状态
                     OLED_Clear();
                     OLED_ShowString(0, 0, "加压中", OLED_8X16);
+                    OLED_Printf(70, 0, OLED_8X16, "%.1fGPa", current_pressure);
                     
-                    // 显示压力值
-                    OLED_ShowString(0, 16, "压力:", OLED_8X16);
-                    OLED_Printf(48, 16, OLED_8X16, "%.1f GPa", current_pressure);
+                    // 显示X、Y、Z三个电机的步数信息
+                    OLED_ShowString(0, 16, "X:", OLED_8X16);
+                    OLED_Printf(16, 16, OLED_8X16, "%lu/%lu", 
+                              Motor_GetStepCount(0), calibrated_steps[0]);
                     
-                    // 显示进度信息
-                    OLED_ShowString(0, 32, "进度:", OLED_8X16);
+                    OLED_ShowString(0, 32, "Y:", OLED_8X16);
+                    OLED_Printf(16, 32, OLED_8X16, "%lu/%lu", 
+                              Motor_GetStepCount(1), calibrated_steps[1]);
                     
-                    // 显示进度条
-                    OLED_DrawRectangle(48, 32, 80, 8, 0);
-                    // 计算相对进度，使用校准过的步数
-                    float progress = (float)current_steps / calibrated_steps[0];
+                    OLED_ShowString(0, 48, "Z:", OLED_8X16);
+                    OLED_Printf(16, 48, OLED_8X16, "%lu/%lu", 
+                              Motor_GetStepCount(2), calibrated_steps[2]);
+                    
+                    // 右侧竖向进度条 - 取三个电机中进度最小的作为整体进度
+                    OLED_DrawRectangle(120, 16, 8, 48, 0);
+                    
+                    // 计算三个电机的加压进度
+                    press_progress_x = (float)Motor_GetStepCount(0) / calibrated_steps[0];
+                    press_progress_y = (float)Motor_GetStepCount(1) / calibrated_steps[1];
+                    press_progress_z = (float)Motor_GetStepCount(2) / calibrated_steps[2];
+                    
+                    // 取最小值作为整体进度
+                    progress = press_progress_x;
+                    if(press_progress_y < progress) progress = press_progress_y;
+                    if(press_progress_z < progress) progress = press_progress_z;
+                    
+                    // 规范化进度值
+                    if(progress < 0.0f) progress = 0.0f;
                     if(progress > 1.0f) progress = 1.0f;
-                    bar_width = (uint8_t)(progress * 80);
-                    if(bar_width > 80) bar_width = 80;
+                    
+                    // 计算进度条宽度
+                    bar_width = (uint8_t)(progress * 48);
+                    if(bar_width > 48) bar_width = 48;
+                    
                     for(uint8_t i = 0; i < bar_width; i++) {
-                        OLED_DrawLine(48 + i, 33, 48 + i, 39);
+                        OLED_DrawLine(121, 63 - i, 127, 63 - i);
                     }
                     
-                    // 显示步数信息
-                    OLED_ShowString(0, 48, "步数:", OLED_8X16);
-                    OLED_Printf(48, 48, OLED_8X16, "%lu/%lu", current_steps, calibrated_steps[0]);
+                    // 更新整体进度
+                    g_process_params.progress = 10.0f + progress * 25.0f;
                     break;
                     
                 case STAGE_HEAT:
@@ -601,7 +671,7 @@ int menu_process(void)
                     OLED_Printf(48, 32, OLED_8X16, "%.1f GPa", current_pressure);
                     
                     // 显示剩余时间
-                    uint32_t remaining_time = (stage_duration[STAGE_HOLD] - elapsed_time) / 1000; // 秒
+                    remaining_time = (stage_duration[STAGE_HOLD] - elapsed_time) / 1000; // 秒
                     OLED_ShowString(0, 48, "剩余:", OLED_8X16);
                     OLED_Printf(48, 48, OLED_8X16, "%02lu:%02lu", remaining_time / 60, remaining_time % 60);
                     
@@ -639,28 +709,51 @@ int menu_process(void)
                     // 显示标题和状态
                     OLED_Clear();
                     OLED_ShowString(0, 0, "卸压中", OLED_8X16);
+                    OLED_Printf(70, 0, OLED_8X16, "%.1fGPa", current_pressure);
                     
-                    // 显示压力值
-                    OLED_ShowString(0, 16, "压力:", OLED_8X16);
-                    OLED_Printf(48, 16, OLED_8X16, "%.1f GPa", current_pressure);
+                    // 显示X、Y、Z三个电机的步数信息
+                    OLED_ShowString(0, 16, "X:", OLED_8X16);
+                    OLED_Printf(16, 16, OLED_8X16, "%lu/%lu", 
+                              Motor_GetStepCount(0), 0);
                     
-                    // 显示进度信息
-                    OLED_ShowString(0, 32, "进度:", OLED_8X16);
+                    OLED_ShowString(0, 32, "Y:", OLED_8X16);
+                    OLED_Printf(16, 32, OLED_8X16, "%lu/%lu", 
+                              Motor_GetStepCount(1), 0);
                     
-                    // 显示进度条
-                    OLED_DrawRectangle(48, 32, 80, 8, 0);
-                    float release_progress = 1.0f - (float)current_steps / calibrated_steps[current_motor];
+                    OLED_ShowString(0, 48, "Z:", OLED_8X16);
+                    OLED_Printf(16, 48, OLED_8X16, "%lu/%lu", 
+                              Motor_GetStepCount(2), 0);
+                    
+                    // 右侧竖向进度条 - 取三个电机中进度最小的作为整体进度
+                    OLED_DrawRectangle(120, 16, 8, 48, 0);
+                    
+                    // 计算各个电机的卸压进度（从最大步数减小到0的比例）
+                    release_progress_x = (float)(calibrated_steps[0] - Motor_GetStepCount(0)) / calibrated_steps[0];
+                    release_progress_y = (float)(calibrated_steps[1] - Motor_GetStepCount(1)) / calibrated_steps[1];
+                    release_progress_z = (float)(calibrated_steps[2] - Motor_GetStepCount(2)) / calibrated_steps[2];
+                    
+                    // 取最小值作为整体进度
+                    release_progress = release_progress_x;
+                    if(release_progress_y < release_progress) release_progress = release_progress_y;
+                    if(release_progress_z < release_progress) release_progress = release_progress_z;
+                    
+                    // 规范化进度值
                     if(release_progress < 0.0f) release_progress = 0.0f;
                     if(release_progress > 1.0f) release_progress = 1.0f;
-                    bar_width = (uint8_t)(release_progress * 80);
-                    if(bar_width > 80) bar_width = 80;
+                    
+                    // 计算进度条宽度
+                    bar_width = (uint8_t)(release_progress * 48);
+                    if(bar_width > 48) bar_width = 48;
+                    
                     for(uint8_t i = 0; i < bar_width; i++) {
-                        OLED_DrawLine(48 + i, 33, 48 + i, 39);
+                        OLED_DrawLine(121, 63 - i, 127, 63 - i);
                     }
                     
-                    // 显示步数信息
-                    OLED_ShowString(0, 48, "步数:", OLED_8X16);
-                    OLED_Printf(48, 48, OLED_8X16, "%lu/%lu", calibrated_steps[current_motor] - current_steps, calibrated_steps[current_motor]);
+                    // 更新整体进度
+                    g_process_params.progress = 85.0f + release_progress * 15.0f;
+                    
+                    // 更新实时压力值 - 随着卸压进度增加，压力从最大值减小到0
+                    current_pressure = target_pressure * (1.0f - release_progress);
                     break;
                     
                 case STAGE_COMPLETE:
@@ -668,14 +761,17 @@ int menu_process(void)
                     OLED_Clear();
                     OLED_ShowString(0, 0, "工艺完成", OLED_8X16);
                     OLED_ShowString(0, 16, "按键4: 返回", OLED_8X16);
-                    break;
+                    OLED_Update();
                     
-                default:
-                    // 其他阶段保持原有显示
-                    OLED_Clear();
-                    OLED_ShowString(0, 0, "工艺进行中", OLED_8X16);
-                    OLED_ShowString(0, 16, "请稍候...", OLED_8X16);
-                    break;
+					current_stage = STAGE_READY;
+					process_confirmed = 0;
+					motors_running = 0; // 确保标记电机已停止
+					oled_update_needed = 1;
+				
+					HAL_Delay(2000);
+					return 0; // 直接返回上级菜单
+
+                    
             }
             
             // 直接更新，因为工艺参数随时在变化
@@ -1590,46 +1686,22 @@ int menu3_MotorCalibration(void)
                     }
                     break;
                     
-                case 3: // 确认当前步数
-                    // 如果电机在运行，先停止
-                    if (calib_params.motor_running) {
-                        Motor_Stop(current_motor);
-                        calib_params.motor_running = 0;
-						
-                        // 将当前步数存储到校准步数数组中，而不是电机目标步数
-                        if (current_motor == 0) {
-                            calibrated_steps[current_motor] = calib_params.steps_x;
-                        } else if (current_motor == 1) {
-                            calibrated_steps[current_motor] = calib_params.steps_y;
-                        } else if (current_motor == 2) {
-                            calibrated_steps[current_motor] = calib_params.steps_z;
-                        }
-                        
-                        // 显示确认消息
-                        OLED_Clear();
-                        OLED_ShowString(0, 0, "步数已保存", OLED_8X16);
-                        OLED_ShowString(0, 16, "用于加压校准", OLED_8X16);
-                        OLED_Printf(0, 32, OLED_8X16, "电机%d: %lu步", current_motor+1, 
-                                  calibrated_steps[current_motor]);
-                        OLED_Update();
-                        HAL_Delay(1000); // 显示1秒
-                        
-						// 返回电机选择模式
-						edit_mode = 0;
-						break;
-                    }
-                    
-                    // 如果电机不在运行，转到精调模式
-                    edit_mode = 2;
-                    break;
-                    
-                case 4: // 切换到精调模式
+                case 3: // 进入精调模式
                     // 如果电机在运行，先停止
                     if (calib_params.motor_running) {
                         Motor_Stop(current_motor);
                         calib_params.motor_running = 0;
                     }
                     edit_mode = 2; // 进入精调模式
+                    break;
+                    
+                case 4: // 返回电机选择模式
+                    // 如果电机在运行，先停止
+                    if (calib_params.motor_running) {
+                        Motor_Stop(current_motor);
+                        calib_params.motor_running = 0;
+                    }
+                    edit_mode = 0; // 返回电机选择模式
                     break;
                     
                 case 5: // 归零（零度校准）
@@ -1655,10 +1727,16 @@ int menu3_MotorCalibration(void)
                     // 获取当前步数并直接修改
                     if (current_motor == 0) {
                         calib_params.steps_x++;
+                        // 更新电机实际步数
+                        Motor_SetStepCount(0, calib_params.steps_x);
                     } else if (current_motor == 1) {
                         calib_params.steps_y++;
+                        // 更新电机实际步数
+                        Motor_SetStepCount(1, calib_params.steps_y);
                     } else if (current_motor == 2) {
                         calib_params.steps_z++;
+                        // 更新电机实际步数
+                        Motor_SetStepCount(2, calib_params.steps_z);
                     }
                     break;
                     
@@ -1666,17 +1744,21 @@ int menu3_MotorCalibration(void)
                     // 获取当前步数并直接修改，确保不小于0
                     if (current_motor == 0 && calib_params.steps_x > 0) {
                         calib_params.steps_x--;
+                        // 更新电机实际步数
+                        Motor_SetStepCount(0, calib_params.steps_x);
                     } else if (current_motor == 1 && calib_params.steps_y > 0) {
                         calib_params.steps_y--;
+                        // 更新电机实际步数
+                        Motor_SetStepCount(1, calib_params.steps_y);
                     } else if (current_motor == 2 && calib_params.steps_z > 0) {
                         calib_params.steps_z--;
+                        // 更新电机实际步数
+                        Motor_SetStepCount(2, calib_params.steps_z);
                     }
                     break;
                     
                 case 3: // 确认当前步数
-                    // 返回电机选择模式
-                    
-                    // 将当前步数存储到校准步数数组中，而不是电机目标步数
+                    // 将当前步数存储到校准步数数组中
                     if (current_motor == 0) {
                         calibrated_steps[current_motor] = calib_params.steps_x;
                     } else if (current_motor == 1) {
@@ -1694,7 +1776,7 @@ int menu3_MotorCalibration(void)
                     OLED_Update();
                     HAL_Delay(1500); // 显示1.5秒
                     
-                    edit_mode = 0;
+                    edit_mode = 0; // 返回电机选择模式
                     break;
                     
                 case 4: // 返回粗调模式
