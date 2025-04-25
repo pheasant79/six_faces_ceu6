@@ -4,48 +4,47 @@
  */
 #include "menu.h"
 
-/* 常量定义 - 避免硬编码值 */
+/* ===================== 菜单系统相关变量 ===================== */
+static uint8_t KeyNum;                    // 按键值存储
+static uint8_t oled_update_needed = 1;    // OLED更新标志位，1表示需要更新
+
+/* ===================== 温度控制相关 ===================== */
 #define DEFAULT_TARGET_TEMPERATURE  200.0f  // 默认目标温度(°C)
 #define DEFAULT_INITIAL_TEMPERATURE 25.0f   // 默认初始温度(°C)
+static float g_target_temperature = DEFAULT_TARGET_TEMPERATURE;  // 目标温度
+
+/* ===================== LED控制相关 ===================== */
+#define LED_PWM_MAX_COUNT           20      // LED PWM周期计数最大值
+static uint8_t g_led_pwm_duty = 0;        // LED PWM占空比(0-10)
+static uint8_t g_led_pwm_counter = 0;     // LED PWM计数器
+static uint8_t g_led_enabled = 0;         // LED启用状态，0表示禁用，1表示启用
+
+/* ===================== 压力控制相关 ===================== */
 #define DEFAULT_TARGET_PRESSURE     5.0f    // 默认目标压力(GPa)
 #define MAX_PRESSURE                20.0f   // 最大压力值(GPa)
 #define MIN_PRESSURE                0.0f    // 最小压力值(GPa)
 #define STEP_COUNT_FULL_PRESSURE    5000    // 加压所需的步数
-#define LED_PWM_MAX_COUNT           20      // LED PWM周期计数最大值
+static float g_target_pressure = DEFAULT_TARGET_PRESSURE;       // 目标压力
+
+/* ===================== 电机控制相关 ===================== */
 #define CALIBRATION_SPEED           100     // 校准速度
 #define NORMAL_SPEED                300     // 正常运行速度
-#define MAX_STAGE_DURATION          18000   // 最大阶段持续时间
-#define MIN_STAGE_DURATION          1000    // 最小阶段持续时间
-#define DEFAULT_HOLD_DURATION       18000   // 默认保温保压时间(ms)
-
-/* 全局变量定义 - 供TIM中断使用 */
-ProcessStage current_stage = STAGE_READY;  // 当前工艺阶段
-uint32_t initial_calibration_steps = 0;    // 校准阶段初始步数
 uint8_t current_motor = 0;                 // 当前选择的电机ID
-
-/* 工艺参数全局变量 */
-static float g_target_temperature = DEFAULT_TARGET_TEMPERATURE;  // 目标温度
-static float g_target_pressure = DEFAULT_TARGET_PRESSURE;       // 目标压力
-static uint32_t g_stage_duration[8] = {0, 1000, 18000, 15000, DEFAULT_HOLD_DURATION, 10000, 5000, 0}; // 各阶段持续时间
-
+uint32_t initial_calibration_steps = 0;    // 校准阶段初始步数
 /* 校准保存的步数值 - 各电机加压所需步数 */
 static uint32_t calibrated_steps[MOTOR_NUM] = {STEP_COUNT_FULL_PRESSURE, STEP_COUNT_FULL_PRESSURE, STEP_COUNT_FULL_PRESSURE};
 
+/* ===================== 工艺流程相关 ===================== */
+#define MAX_STAGE_DURATION          18000   // 最大阶段持续时间
+#define MIN_STAGE_DURATION          1000    // 最小阶段持续时间
+#define DEFAULT_HOLD_DURATION       18000   // 默认保温保压时间(ms)
+ProcessStage current_stage = STAGE_READY;  // 当前工艺阶段
+static uint32_t g_stage_duration[8] = {0, 1000, 18000, 15000, DEFAULT_HOLD_DURATION, 10000, 5000, 0}; // 各阶段持续时间
+static ProcessParams g_process_params = {0};     // 工艺参数
 
-/* 外部变量声明 */
+/* ===================== 外部变量声明 ===================== */
 extern TIM_HandleTypeDef htim5;  // TIM5句柄，用于LED PWM控制
 extern Motor motors[MOTOR_NUM];  // 从motor.c引入电机数组
-
-/* 全局变量 */
-static uint8_t KeyNum;                    // 按键值存储
-
-static ProcessParams g_process_params = {0};     // 工艺参数
-static uint8_t oled_update_needed = 1;    // OLED更新标志位，1表示需要更新
-
-/* LED PWM控制变量 */
-static uint8_t g_led_pwm_duty = 0;        // LED PWM占空比(0-10)
-static uint8_t g_led_pwm_counter = 0;     // LED PWM计数器
-static uint8_t g_led_enabled = 0;         // LED启用状态，0表示禁用，1表示启用
 
 /*=============================内部函数声明================================================*/
 
@@ -56,10 +55,6 @@ static void display_menu_items(const MenuItem *items, uint8_t count, uint8_t sel
 // LED温度显示
 static void update_temperature_led(float temperature, float target_temp, float initial_temp); // 根据温度更新LED亮度
 static void reset_led_state(void);         // 重置LED状态
-
-// 暂时未定义但被调用的函数
-Temperature_Status Set_Temperature(float temp);   // 设置温度
-Pressure_Status Set_Pressure(float pressure); // 设置压力
 
 int menu3_MotorCalibration(void);
 
