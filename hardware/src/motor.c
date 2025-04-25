@@ -1,37 +1,37 @@
 /**
  * @file motor.c
- * @brief ÁùÃæ¶¥²½½øµç»úÇı¶¯ÊµÏÖ
+ * @brief ç”µæœºé©±åŠ¨æ¨¡å—å®ç°å‡½æ•°
  */
 #include "motor.h"
 #include <string.h>
 
-/* ĞéÄâDMA¾ä±ú - ÓÃÓÚ±àÒëÍ¨¹ı£¬µ«Êµ¼Ê²»Ê¹ÓÃ */
+/* å®šä¹‰DMAå¥æŸ„ - è¿™äº›å¥æŸ„åœ¨STM32ä¸»æ–‡ä»¶ä¸­åˆå§‹åŒ– */
 DMA_HandleTypeDef hdma_tim2_ch3_up;
 DMA_HandleTypeDef hdma_tim3_ch4_up;
 DMA_HandleTypeDef hdma_tim4_up;
 
-/* ¾²Ì¬º¯ÊıÉùÃ÷ */
+/* é™æ€å‡½æ•°å£°æ˜ */
 static void gpio_reset_pins(Motor *m);
 static Motor_Status validate_motor_id(uint8_t motor_id);
 static Motor_Status motor_start(Motor *m);
 
-/* ÏàÎ»±í¶¨Òå - Ê¹ÓÃBSRR¼Ä´æÆ÷ÊµÏÖÔ­×Ó²Ù×÷
- * ¸ß16Î»Ğ´1ÇåÁã¶ÔÓ¦Òı½Å,µÍ16Î»Ğ´1ÖÃÎ»¶ÔÓ¦Òı½Å
+/* ç”µæœºç›¸ä½è¡¨ - ä½¿ç”¨BSRRå¯„å­˜å™¨ç›´æ¥è®¾ç½®GPIO
+ * ä½16ä½ä¸º1ä»£è¡¨è®¾ç½®é«˜ç”µå¹³ï¼Œé«˜16ä½ä¸º1ä»£è¡¨è®¾ç½®ä½ç”µå¹³
  */
 static const uint32_t Motor_PhaseTables[3][4] = {
-    [0] = { // Motor1ÏàĞò
+    [0] = { // Motor1ç›¸ä½è¡¨
         Motor1_A_Pin | ((uint32_t)Motor1_B_Pin|Motor1_C_Pin|Motor1_D_Pin)<<16,
         Motor1_B_Pin | ((uint32_t)Motor1_A_Pin|Motor1_C_Pin|Motor1_D_Pin)<<16,
         Motor1_C_Pin | ((uint32_t)Motor1_A_Pin|Motor1_B_Pin|Motor1_D_Pin)<<16,
         Motor1_D_Pin | ((uint32_t)Motor1_A_Pin|Motor1_B_Pin|Motor1_C_Pin)<<16
     },
-    [1] = { // Motor2ÏàĞò                                             
+    [1] = { // Motor2ç›¸ä½è¡¨                                             
         Motor2_A_Pin | ((uint32_t)Motor2_B_Pin|Motor2_C_Pin|Motor2_D_Pin)<<16,
         Motor2_B_Pin | ((uint32_t)Motor2_A_Pin|Motor2_C_Pin|Motor2_D_Pin)<<16,
         Motor2_C_Pin | ((uint32_t)Motor2_A_Pin|Motor2_B_Pin|Motor2_D_Pin)<<16,
         Motor2_D_Pin | ((uint32_t)Motor2_A_Pin|Motor2_B_Pin|Motor2_C_Pin)<<16
     },
-    [2] = { // Motor3ÏàĞò
+    [2] = { // Motor3ç›¸ä½è¡¨
         Motor3_A_Pin | ((uint32_t)Motor3_B_Pin|Motor3_C_Pin|Motor3_D_Pin)<<16,
         Motor3_B_Pin | ((uint32_t)Motor3_A_Pin|Motor3_C_Pin|Motor3_D_Pin)<<16,
         Motor3_C_Pin | ((uint32_t)Motor3_A_Pin|Motor3_B_Pin|Motor3_D_Pin)<<16,
@@ -39,7 +39,7 @@ static const uint32_t Motor_PhaseTables[3][4] = {
     }
 };
 
-/* µç»úÊµÀı¶¨Òå */
+/* ç”µæœºç»“æ„ä½“æ•°ç»„ */
 Motor motors[MOTOR_NUM] = {
     [0] = {
         .id = 0,
@@ -88,81 +88,84 @@ Motor motors[MOTOR_NUM] = {
     }
 };
 
+// å¼•ç”¨menu.cä¸­å®šä¹‰çš„ç›®æ ‡æ­¥æ•°æ•°ç»„
+extern uint32_t motor_target_steps[MOTOR_NUM];
+
 /**
- * @brief  GPIO¸´Î»º¯Êı
- * @param  m µç»úÊµÀıÖ¸Õë
+ * @brief  GPIOå¼•è„šå¤ä½å‡½æ•°
+ * @param  m ç”µæœºç»“æ„ä½“æŒ‡é’ˆ
  * @retval None
  */
 static void gpio_reset_pins(Motor *m) {
-    m->gpio_port->BSRR = m->pins << 16; // Ô­×Ó²Ù×÷ÖÃµÍ
+    m->gpio_port->BSRR = m->pins << 16; // å°†æ‰€æœ‰å¼•è„šå¤ä½
 }
 
 /**
- * @brief  µç»úIDÑéÖ¤
- * @param  motor_id µç»úID
- * @retval Motor_Status ÑéÖ¤½á¹û
+ * @brief  ç”µæœºIDéªŒè¯å‡½æ•°
+ * @param  motor_id ç”µæœºID
+ * @retval Motor_Status æ“ä½œç»“æœ
  */
 static Motor_Status validate_motor_id(uint8_t motor_id) {
     return (motor_id < MOTOR_NUM) ? MOTOR_OK : MOTOR_ERR_INVALID_ID;
 }
 
 /**
- * @brief  Æô¶¯µç»ú
- * @param  m µç»úÊµÀıÖ¸Õë
- * @retval Motor_Status ×´Ì¬Âë
+ * @brief  ç”µæœºå¯åŠ¨å‡½æ•°
+ * @param  m ç”µæœºç»“æ„ä½“æŒ‡é’ˆ
+ * @retval Motor_Status ç»“æœ
  */
 static Motor_Status motor_start(Motor *m) {
     if(m->state == MOTOR_RUNNING) return MOTOR_ERR_ALREADY_RUNNING;
 
-    // 1. ÅäÖÃ¶¨Ê±Æ÷
+    // 1. æ¸…é›¶è®¡æ•°å™¨
     __HAL_TIM_SET_COUNTER(m->htim, 0);
     
-    // 2. Æô¶¯¶¨Ê±Æ÷ÖĞ¶Ï
+    // 2. å¯åŠ¨å®šæ—¶å™¨ä¸­æ–­
     if(HAL_TIM_Base_Start_IT(m->htim) != HAL_OK) {
         return MOTOR_ERR_TIM_START;
     }
 
-    m->state = MOTOR_RUNNING; // ÉèÖÃÎªÔËĞĞ×´Ì¬
+    m->state = MOTOR_RUNNING; // æ›´æ–°ç”µæœºçŠ¶æ€ä¸ºè¿è¡Œä¸­
     return MOTOR_OK;
 }
 
 /**
- * @brief  Èí¼ş´¥·¢ÏàÎ»¸üĞÂ
- * @param  m µç»úÊµÀıÖ¸Õë
+ * @brief  ç”µæœºç›¸ä½æ›´æ–°å‡½æ•° - ä¸­æ–­ä¸­è°ƒç”¨
+ * @param  m ç”µæœºç»“æ„ä½“æŒ‡é’ˆ
  * @retval None
  */
 void motor_update_phase(Motor *m) {
     if(m->state != MOTOR_RUNNING) return;
     
-    // Ö±½Ó½«µ±Ç°ÏàÎ»Ğ´ÈëBSRR¼Ä´æÆ÷
+    // æ ¹æ®å½“å‰ç›¸ä½ç´¢å¼•è®¾ç½®BSRRå¯„å­˜å™¨
     m->gpio_port->BSRR = m->phases[m->phase_index];
     
-    // ¸ù¾İ·½Ïò¸üĞÂÏàÎ»Ë÷ÒıºÍ²½Êı¼ÆÊıÆ÷
+    // æ ¹æ®ç”µæœºæ—‹è½¬æ–¹å‘æ›´æ–°ç›¸ä½ç´¢å¼•å’Œæ­¥æ•°è®¡æ•°å™¨
     if (m->dir == DIR_CW) {
-        // Õı×ª£ºË÷ÒıµİÔö
+        // é¡ºæ—¶é’ˆæ—‹è½¬ï¼Œç›¸ä½ç´¢å¼•+1
         m->phase_index = (m->phase_index + 1) % 4;
-        // Ã¿´ÎÏàÎ»±ä»¯¶¼¸üĞÂ²½Êı£¬Ôö¼Ó1²½
+        // é¡ºæ—¶é’ˆè¿è½¬æ—¶ï¼Œæ­¥æ•°è®¡æ•°å™¨å¢åŠ 1æ­¥
         m->step_counter++;
     } else {
-        // ·´×ª£ºË÷Òıµİ¼õ£¨+3 µÈ¼ÛÓÚ -1£¬µ«±ÜÃâ¸ºÊı£©
+        // é€†æ—¶é’ˆæ—‹è½¬ï¼Œç›¸ä½ç´¢å¼•+3ï¼ˆç›¸å½“äº-1ï¼Œé¿å…è´Ÿæ•°å¤„ç†ï¼‰
         m->phase_index = (m->phase_index + 3) % 4;
-        // Ã¿´ÎÏàÎ»±ä»¯¶¼¸üĞÂ²½Êı£¬¼õÉÙ1²½
+        // é€†æ—¶é’ˆè¿è½¬æ—¶ï¼Œæ­¥æ•°è®¡æ•°å™¨å‡å°‘1æ­¥
         m->step_counter--;
     }
 }
 
 /**
- * @brief  ³õÊ¼»¯ËùÓĞµç»ú
- * @retval Motor_Status ³õÊ¼»¯½á¹û
+ * @brief  ç”µæœºåˆå§‹åŒ–å‡½æ•°
+ * @retval Motor_Status åˆå§‹åŒ–ç»“æœ
  */
 Motor_Status Motor_InitAll(void) {
     for(int i=0; i<MOTOR_NUM; i++) {
         Motor *m = &motors[i];
         
-        // È·±£IDºÍÊı×éË÷ÒıÒ»ÖÂ
+        // è®¾ç½®ç”µæœºIDå’Œå…¶ä»–å‚æ•°
         m->id = i;
         
-        // ³õÊ¼»¯GPIO
+        // å¤ä½æ‰€æœ‰GPIO
         gpio_reset_pins(m);
         m->state = MOTOR_STOP;
         m->dir = DIR_NONE;
@@ -173,9 +176,9 @@ Motor_Status Motor_InitAll(void) {
 }
 
 /**
- * @brief  Æô¶¯µç»ú
- * @param  id µç»úID(0-2)
- * @retval Motor_Status ²Ù×÷½á¹û
+ * @brief  å¯åŠ¨æŒ‡å®šç”µæœº
+ * @param  id ç”µæœºID(0-2)
+ * @retval Motor_Status æ“ä½œç»“æœ
  */
 Motor_Status Motor_Run(uint8_t id) {
     Motor_Status status;
@@ -184,23 +187,23 @@ Motor_Status Motor_Run(uint8_t id) {
         
     Motor *m = &motors[id];
     
-    // Èç¹ûµç»úÒÑ¾­ÔÚÔËĞĞ,Ö±½Ó·µ»Ø³É¹¦
+    // å¦‚æœç”µæœºå·²ç»å¤„äºè¿è¡ŒçŠ¶æ€ï¼Œç›´æ¥è¿”å›
     if(m->state == MOTOR_RUNNING) 
         return MOTOR_OK;
     
-    // Èç¹ûÃ»ÓĞÉèÖÃ·½Ïò,Ä¬ÈÏÊ¹ÓÃË³Ê±Õë
+    // å¦‚æœæ²¡æœ‰è®¾ç½®æ—‹è½¬æ–¹å‘ï¼Œé»˜è®¤è®¾ä¸ºé¡ºæ—¶é’ˆ
     if(m->dir == DIR_NONE) {
         m->dir = DIR_CW;
     }
     
-    // Æô¶¯µç»ú,motor_startÄÚ²¿»áÉèÖÃ×´Ì¬ÎªMOTOR_RUNNING
+    // å¯åŠ¨ç”µæœºï¼Œmotor_startå†…éƒ¨ä¼šå°†ç”µæœºçŠ¶æ€æ›´æ–°ä¸ºMOTOR_RUNNING
     return motor_start(m);
 }
 
 /**
- * @brief  Í£Ö¹µç»ú
- * @param  id µç»úID(0-2)
- * @retval Motor_Status ²Ù×÷½á¹û
+ * @brief  åœæ­¢æŒ‡å®šç”µæœº
+ * @param  id ç”µæœºID(0-2)
+ * @retval Motor_Status æ“ä½œç»“æœ
  */
 Motor_Status Motor_Stop(uint8_t id) {
     Motor_Status status;
@@ -209,29 +212,29 @@ Motor_Status Motor_Stop(uint8_t id) {
     
     Motor *m = &motors[id];
     
-    // Èç¹ûµç»úÒÑ¾­Í£Ö¹,Ö±½Ó·µ»Ø³É¹¦
+    // å¦‚æœç”µæœºå·²ç»å¤„äºåœæ­¢çŠ¶æ€ï¼Œç›´æ¥è¿”å›
     if(m->state == MOTOR_STOP)
         return MOTOR_OK;
     
-    // Èç¹ûµç»ú²»ÔÚÔËĞĞ×´Ì¬,·µ»Ø´íÎó
+    // å¦‚æœç”µæœºä¸å¤„äºè¿è¡ŒçŠ¶æ€ï¼Œä¹Ÿç›´æ¥è¿”å›
     if(m->state != MOTOR_RUNNING) 
         return MOTOR_OK;
     
-    // Í£Ö¹¶¨Ê±Æ÷ÖĞ¶Ï
+    // åœæ­¢å®šæ—¶å™¨ä¸­æ–­
     HAL_TIM_Base_Stop_IT(m->htim);
     
-    // ÖØÖÃÒı½Å×´Ì¬
+    // å°†æ‰€æœ‰å¼•è„šå¤ä½
     gpio_reset_pins(m);
     
-    // ÉèÖÃµç»ú×´Ì¬ÎªÍ£Ö¹
+    // æ›´æ–°ç”µæœºçŠ¶æ€ä¸ºåœæ­¢
     m->state = MOTOR_STOP;
     
     return MOTOR_OK;
 }
 
 /**
- * @brief  ½ô¼±Í£Ö¹ËùÓĞµç»ú
- * @retval Motor_Status ²Ù×÷½á¹û
+ * @brief  ç´§æ€¥åœæ­¢æ‰€æœ‰ç”µæœº
+ * @retval Motor_Status æ“ä½œç»“æœ
  */
 Motor_Status Motor_EmergencyStop(void) {
     Motor_Status final_status = MOTOR_OK;
@@ -243,35 +246,35 @@ Motor_Status Motor_EmergencyStop(void) {
 }
 
 /**
- * @brief  ÉèÖÃµç»úĞı×ª·½Ïò
- * @param  id µç»úID(0-2)
- * @param  dir Ğı×ª·½Ïò(DIR_CW/DIR_CCW)
- * @retval Motor_Status ²Ù×÷½á¹û
+ * @brief  è®¾ç½®æŒ‡å®šç”µæœºæ—‹è½¬æ–¹å‘
+ * @param  id ç”µæœºID(0-2)
+ * @param  dir æ—‹è½¬æ–¹å‘(DIR_CW/DIR_CCW)
+ * @retval Motor_Status æ“ä½œç»“æœ
  */
 Motor_Status Motor_SetDir(uint8_t id, Motor_Dir dir) {
     Motor_Status status;
     if((status = validate_motor_id(id)) != MOTOR_OK) 
         return status;
     
-    // ºöÂÔÎŞĞ§·½ÏòÉèÖÃ
+    // å¦‚æœæ˜¯æ— æ–¹å‘ï¼Œåˆ™ä¸å¤„ç†
     if(dir == DIR_NONE) 
-        return MOTOR_OK; // ºöÂÔÎŞĞ§·½Ïò
+        return MOTOR_OK; // ä¿æŒå½“å‰æ–¹å‘ä¸å˜
     
     Motor *m = &motors[id];
     if(m->dir == dir) 
-        return MOTOR_OK; // ·½ÏòÏàÍ¬,ÎŞĞè¸Ä±ä
+        return MOTOR_OK; // æ–¹å‘ç›¸åŒï¼Œæ— éœ€æ›´æ”¹
     
-    // ÉèÖÃĞÂ·½Ïò
+    // æ›´æ–°æ–¹å‘
     m->dir = dir;
     
     return MOTOR_OK;
 }
 
 /**
- * @brief  ÉèÖÃµç»úËÙ¶È
- * @param  id µç»úID(0-2)
- * @param  steps_per_sec ËÙ¶È(²½/Ãë)
- * @retval Motor_Status ²Ù×÷½á¹û
+ * @brief  è®¾ç½®æŒ‡å®šç”µæœºé€Ÿåº¦
+ * @param  id ç”µæœºID(0-2)
+ * @param  steps_per_sec é€Ÿåº¦(æ­¥/ç§’)
+ * @retval Motor_Status æ“ä½œç»“æœ
  */
 Motor_Status Motor_SetSpeed(uint8_t id, uint32_t steps_per_sec) {
     Motor_Status status;
@@ -289,7 +292,7 @@ Motor_Status Motor_SetSpeed(uint8_t id, uint32_t steps_per_sec) {
     uint32_t best_psc = 0;
     uint32_t best_arr = 0xFFFF;
     
-    // ¶ş·Ö²éÕÒ×î¼Ñ·ÖÆµÏµÊı
+    // äºŒåˆ†æŸ¥æ‰¾æœ€ä½³çš„åˆ†é¢‘å’Œé‡è£…è½½å€¼
     while(min_psc <= max_psc) {
         uint32_t mid_psc = (min_psc + max_psc) / 2;
         uint32_t calc_arr = (timer_clk / (steps_per_sec * (mid_psc + 1))) - 1;
@@ -297,7 +300,7 @@ Motor_Status Motor_SetSpeed(uint8_t id, uint32_t steps_per_sec) {
         if(calc_arr <= 0xFFFF) {
             best_psc = mid_psc;
             best_arr = calc_arr;
-            max_psc = mid_psc - 1; // ¾¡Á¿Ğ¡PSC
+            max_psc = mid_psc - 1; // å°è¯•æ›´å°çš„PSC
         } else {
             min_psc = mid_psc + 1;
         }
@@ -307,37 +310,153 @@ Motor_Status Motor_SetSpeed(uint8_t id, uint32_t steps_per_sec) {
         return MOTOR_ERR_SPEED_RANGE;
     }
     
-    // ÉèÖÃ¶¨Ê±Æ÷²ÎÊı
+    // è®¾ç½®å®šæ—¶å™¨çš„åˆ†é¢‘å’Œé‡è£…è½½å€¼
     __HAL_TIM_SET_PRESCALER(m->htim, best_psc);
     __HAL_TIM_SET_AUTORELOAD(m->htim, best_arr);
     
-    // Èç¹ûµç»úÕıÔÚÔËĞĞ,¸üĞÂ¼ÆÊıÆ÷
+    // å¦‚æœç”µæœºå·²ç»åœ¨è¿è¡Œï¼Œé‡ç½®è®¡æ•°å™¨
     if(m->state == MOTOR_RUNNING) {
         __HAL_TIM_SET_COUNTER(m->htim, 0);
         m->htim->Instance->EGR = TIM_EGR_UG;
     }
     
-    // ¸üĞÂÊµ¼ÊËÙ¶È
+    // ä¿å­˜å®é™…é€Ÿåº¦å€¼
     m->actual_speed = steps_per_sec;
     
     return MOTOR_OK;
 }
 
-
 /**
- * @brief  »ñÈ¡µç»ú×´Ì¬
- * @param  id µç»úID(0-2)
- * @retval Motor_State µç»ú×´Ì¬
+ * @brief  è·å–æŒ‡å®šç”µæœºçŠ¶æ€
+ * @param  id ç”µæœºID(0-2)
+ * @retval Motor_State ç”µæœºçŠ¶æ€
  */
 Motor_State Motor_GetState(uint8_t id) {
     return (id < MOTOR_NUM) ? motors[id].state : MOTOR_ERROR;
 }
 
 /**
- * @brief  »ñÈ¡µç»ú²½Êı
- * @param  id µç»úID(0-2)
- * @retval uint32_t ²½Êı
+ * @brief  è·å–æŒ‡å®šç”µæœºæ­¥æ•°
+ * @param  id ç”µæœºID(0-2)
+ * @retval uint32_t æ­¥æ•°
  */
 uint32_t Motor_GetStepCount(uint8_t id) {
     return (id < MOTOR_NUM) ? motors[id].step_counter : 0;
+}
+
+/**
+ * @brief  è®¾ç½®ç”µæœºç›®æ ‡æ­¥æ•°
+ * @param  id ç”µæœºID(0-2)
+ * @param  steps ç›®æ ‡æ­¥æ•°ï¼Œ0è¡¨ç¤ºä¸é™åˆ¶
+ * @retval Motor_Status æ“ä½œçŠ¶æ€
+ */
+Motor_Status Motor_SetTargetSteps(uint8_t id, uint32_t steps) {
+    Motor_Status status;
+    if((status = validate_motor_id(id)) != MOTOR_OK) 
+        return status;
+        
+    motor_target_steps[id] = steps;
+    return MOTOR_OK;
+}
+
+/**
+ * @brief  ç”µæœºç²¾è°ƒæ§åˆ¶å‡½æ•° - å°‘é‡æ­¥æ•°å¾®è°ƒ
+ * @param  id ç”µæœºID(0-2)
+ * @param  steps ç²¾è°ƒæ­¥æ•°
+ * @param  dir è°ƒæ•´æ–¹å‘
+ * @retval Motor_Status æ“ä½œçŠ¶æ€
+ */
+Motor_Status Motor_FineTune(uint8_t id, uint32_t steps, Motor_Dir dir) {
+    Motor_Status status;
+    
+    // å‚æ•°æ£€æŸ¥
+    if((status = validate_motor_id(id)) != MOTOR_OK) 
+        return status;
+    
+    if(dir == DIR_NONE) 
+        return MOTOR_OK; // æ— æ–¹å‘åˆ™ä¸è¿›è¡Œæ“ä½œ
+    
+    // è®¾ç½®æ–¹å‘
+    if((status = Motor_SetDir(id, dir)) != MOTOR_OK)
+        return status;
+    
+    // ç²¾è°ƒé‡‡ç”¨è¾ƒæ…¢é€Ÿåº¦ï¼Œç¡®ä¿å‡†ç¡®æ€§
+    uint32_t fine_tune_speed = motors[id].min_speed + 20; // ç¨å¿«äºæœ€å°é€Ÿåº¦
+    if((status = Motor_SetSpeed(id, fine_tune_speed)) != MOTOR_OK)
+        return status;
+    
+    // è®¾ç½®ç›®æ ‡æ­¥æ•°
+    Motor_SetTargetSteps(id, Motor_GetStepCount(id) + (dir == DIR_CW ? steps : -steps));
+    
+    // å¯åŠ¨ç”µæœº
+    return Motor_Run(id);
+}
+
+/**
+ * @brief  ç”µæœºåŠ å‹æ§åˆ¶å‡½æ•° - æ­£å‘å¢åŠ å‹åŠ›
+ * @param  id ç”µæœºID(0-2)
+ * @param  steps åŠ å‹æ­¥æ•°
+ * @param  speed åŠ å‹é€Ÿåº¦ï¼Œ0è¡¨ç¤ºä½¿ç”¨é»˜è®¤é€Ÿåº¦
+ * @retval Motor_Status æ“ä½œçŠ¶æ€
+ */
+Motor_Status Motor_ApplyPressure(uint8_t id, uint32_t steps, uint32_t speed) {
+    Motor_Status status;
+    
+    // å‚æ•°æ£€æŸ¥
+    if((status = validate_motor_id(id)) != MOTOR_OK) 
+        return status;
+    
+    // åŠ å‹æ–¹å‘é»˜è®¤ä¸ºé¡ºæ—¶é’ˆ
+    if((status = Motor_SetDir(id, DIR_CW)) != MOTOR_OK)
+        return status;
+    
+    // è®¾ç½®é€Ÿåº¦
+    uint32_t apply_speed = (speed > 0) ? speed : (motors[id].max_speed / 2); // é»˜è®¤ä½¿ç”¨ä¸­ç­‰é€Ÿåº¦
+    if(apply_speed < motors[id].min_speed) apply_speed = motors[id].min_speed;
+    if(apply_speed > motors[id].max_speed) apply_speed = motors[id].max_speed;
+    
+    if((status = Motor_SetSpeed(id, apply_speed)) != MOTOR_OK)
+        return status;
+    
+    // è®¾ç½®ç›®æ ‡æ­¥æ•°
+    uint32_t current_steps = Motor_GetStepCount(id);
+    Motor_SetTargetSteps(id, current_steps + steps);
+    
+    // å¯åŠ¨ç”µæœº
+    return Motor_Run(id);
+}
+
+/**
+ * @brief  ç”µæœºå¸å‹æ§åˆ¶å‡½æ•° - åå‘é‡Šæ”¾å‹åŠ›
+ * @param  id ç”µæœºID(0-2)
+ * @param  steps å¸å‹æ­¥æ•°
+ * @param  speed å¸å‹é€Ÿåº¦ï¼Œ0è¡¨ç¤ºä½¿ç”¨é»˜è®¤é€Ÿåº¦
+ * @retval Motor_Status æ“ä½œçŠ¶æ€
+ */
+Motor_Status Motor_ReleasePressure(uint8_t id, uint32_t steps, uint32_t speed) {
+    Motor_Status status;
+    
+    // å‚æ•°æ£€æŸ¥
+    if((status = validate_motor_id(id)) != MOTOR_OK) 
+        return status;
+    
+    // å¸å‹æ–¹å‘é»˜è®¤ä¸ºé€†æ—¶é’ˆ
+    if((status = Motor_SetDir(id, DIR_CCW)) != MOTOR_OK)
+        return status;
+    
+    // è®¾ç½®é€Ÿåº¦
+    uint32_t release_speed = (speed > 0) ? speed : (motors[id].max_speed / 3); // é»˜è®¤ä½¿ç”¨è¾ƒæ…¢é€Ÿåº¦
+    if(release_speed < motors[id].min_speed) release_speed = motors[id].min_speed;
+    if(release_speed > motors[id].max_speed) release_speed = motors[id].max_speed;
+    
+    if((status = Motor_SetSpeed(id, release_speed)) != MOTOR_OK)
+        return status;
+    
+    // è®¾ç½®ç›®æ ‡æ­¥æ•°
+    uint32_t current_steps = Motor_GetStepCount(id);
+    if(steps > current_steps) steps = current_steps; // é˜²æ­¢æ­¥æ•°ä¸ºè´Ÿ
+    Motor_SetTargetSteps(id, current_steps - steps);
+    
+    // å¯åŠ¨ç”µæœº
+    return Motor_Run(id);
 }

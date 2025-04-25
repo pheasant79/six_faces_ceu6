@@ -24,8 +24,12 @@
 /* USER CODE BEGIN Includes */
 #include "key.h"
 #include "motor.h"
+#include "menu.h"  // 添加菜单头文件包含
 // 引入LED PWM控制函数声明
 extern void LED_PWM_Update(void);
+
+// 使用菜单中定义的目标步数数组
+extern uint32_t motor_target_steps[MOTOR_NUM];
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -279,6 +283,31 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     for (uint8_t i = 0; i < MOTOR_NUM; i++) {
         if (htim == motors[i].htim && motors[i].state == MOTOR_RUNNING) {
             motor_update_phase(&motors[i]);
+            
+            // 自动检查是否达到目标步数，直接内置在中断中
+            if (motors[i].step_control_enabled) {
+                uint32_t current_steps = Motor_GetStepCount(i);
+                
+                // 校准和卸压阶段特殊处理：目标步数为0时的情况
+                if (motors[i].dir == DIR_CCW && motors[i].target_steps == 0) {
+                    // 逆时针旋转且目标为0时，当步数为0时停止
+                    if (current_steps == 0) {
+                        Motor_Stop(i);
+                        motors[i].step_control_enabled = 0; // 关闭步数监控
+                    }
+                }
+                // 常规目标步数判断
+                else if (motors[i].target_steps != 0) {
+                    // 根据方向判断是否达到目标步数
+                    if ((motors[i].dir == DIR_CW && current_steps >= motors[i].target_steps) ||
+                        (motors[i].dir == DIR_CCW && current_steps <= motors[i].target_steps)) {
+                        Motor_Stop(i);
+                        motors[i].target_steps = 0; // 清除目标步数
+                        motors[i].step_control_enabled = 0; // 关闭步数监控
+                    }
+                }
+            }
+            
             break; // 找到对应电机后直接退出循环
         }
     }

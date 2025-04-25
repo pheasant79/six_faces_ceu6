@@ -4,14 +4,34 @@
  */
 #include "menu.h"
 
+/* 常量定义 - 避免硬编码值 */
+#define DEFAULT_TARGET_TEMPERATURE  200.0f  // 默认目标温度(°C)
+#define DEFAULT_INITIAL_TEMPERATURE 25.0f   // 默认初始温度(°C)
+#define DEFAULT_TARGET_PRESSURE     5.0f    // 默认目标压力(GPa)
+#define STEP_COUNT_FULL_PRESSURE    5000    // 加压所需的步数
+#define LED_PWM_MAX_COUNT           20      // LED PWM周期计数最大值
+#define CALIBRATION_SPEED           100     // 校准速度
+#define NORMAL_SPEED                300     // 正常运行速度
+
+/* 全局变量定义 - 供TIM中断使用 */
+ProcessStage current_stage = STAGE_READY;  // 当前工艺阶段
+uint32_t initial_calibration_steps = 0;    // 校准阶段初始步数
+uint8_t current_motor = 0;                 // 当前选择的电机ID
+
+/* 校准保存的步数值 - 各电机加压所需步数 */
+static uint32_t calibrated_steps[MOTOR_NUM] = {STEP_COUNT_FULL_PRESSURE, STEP_COUNT_FULL_PRESSURE, STEP_COUNT_FULL_PRESSURE};
+
+/* 为motor.c提供的外部变量 - 电机目标步数数组 */
+uint32_t motor_target_steps[MOTOR_NUM] = {0, 0, 0};
+
 /* 外部变量声明 */
 extern TIM_HandleTypeDef htim5;  // TIM5句柄，用于LED PWM控制
+extern Motor motors[MOTOR_NUM];  // 从motor.c引入电机数组
 
 /* 全局变量 */
 static uint8_t KeyNum;                    // 按键值存储
-static SystemParams g_sys_params = {0};   // 系统参数
+
 static ProcessParams g_process_params = {0};     // 工艺参数
-static Particle particles[MAX_PARTICLES]; // 粒子效果数据
 static uint8_t oled_update_needed = 1;    // OLED更新标志位，1表示需要更新
 
 /* LED PWM控制变量 */
@@ -19,41 +39,28 @@ static uint8_t g_led_pwm_duty = 0;        // LED PWM占空比(0-10)
 static uint8_t g_led_pwm_counter = 0;     // LED PWM计数器
 static uint8_t g_led_enabled = 0;         // LED启用状态，0表示禁用，1表示启用
 
-/* ===== 内部函数声明 ===== */
+/*=============================内部函数声明================================================*/
+
+/* =====  ===== */
 // 显示
-static void display_3d_model(void);         // 显示3D模型
-static void display_pressure_bars(void);    // 显示压力条形图
-static void display_temperature(void);      // 显示温度计和温度值
-static void display_progress(void);         // 显示进度条和百分比
-static void display_status_bar(void);       // 显示系统状态栏
-//static void display_animation_frame(void);  // 显示动画帧
 static void display_menu_items(const MenuItem *items, uint8_t count, uint8_t select); // 显示菜单项
-#if 0  // 未使用的函数，注释掉以消除警告
-static void display_value_with_animation(float value, uint8_t x, uint8_t y); // 显示有效数据值
-#endif
-
-// 处理触摸输入
-//static void handle_touch_input(void);    // 处理触摸输入
-//static void update_parameters(void);     // 更新系统参数
-//static void save_history_data(void);     // 保存历史数据
-//static void process_update(void);        // 处理工艺参数
-
-// 有效数据
-//static void animate_transformation(void);  // 模拟变换固定
-#if 0
-static void show_warning_effect(void);     // 显示状态警告效果
-#endif
-static void update_particle_effects(void); // 更新粒子效果
-static void init_particles(void);          // 初始化粒子效果
-
-// 系统功能
-#if 0  // 未使用的函数，注释掉以消除警告
-static void update_system_state(void);     // 更新系统状态
-static void toggle_night_mode(void);       // 切换白天/夜晚显示模式
-#endif
 
 // LED温度显示
 static void update_temperature_led(float temperature, float target_temp, float initial_temp); // 根据温度更新LED亮度
+static void reset_led_state(void);         // 重置LED状态
+
+// 暂时未定义但被调用的函数
+float Get_Temperature(void);               // 获取当前温度
+Temperature_Status Set_Temperature(float temp);   // 设置温度
+float Get_Pressure(void);                  // 获取当前压力
+Pressure_Status Set_Pressure(float pressure); // 设置压力
+
+int menu3_MotorCalibration(void);
+
+/*==============================================================================*/
+
+/*======================================================================*/
+
 
 /**
  * @brief  显示菜单项
@@ -72,229 +79,7 @@ static void display_menu_items(const MenuItem *items, uint8_t count, uint8_t sel
     oled_update_needed = 0; // 重置标志位
 }
 
-/**
- * @brief 显示状态栏
- */
-static void display_status_bar(void) {
-    char status_text[16];
-    const char *state_str[] = {"IDLE", "HEAT", "PRESS", "HOLD", "COOL", "ERR"};
-    
-    // 显示系统状态
-    snprintf(status_text, sizeof(status_text), "%s", state_str[g_sys_params.state]);
-    OLED_ShowString(0, 0, status_text, OLED_8X16);
-    
-    // 显示报警次数
-    if(g_sys_params.alert_count > 0) {
-        snprintf(status_text, sizeof(status_text), "!%d", g_sys_params.alert_count);
-        OLED_ShowString(SCREEN_WIDTH-24, 0, status_text, OLED_8X16);
-    }
-}
 
-/**
- * @brief 初始化粒子效果
- */
-static void init_particles(void) {
-    for(int i = 0; i < MAX_PARTICLES; i++) {
-        particles[i].active = 0;
-    }
-}
-
-/**
- * @brief 更新粒子效果
- */
-static void update_particle_effects(void) {
-    static uint32_t last_particle = 0;
-    uint32_t current_time = HAL_GetTick();
-    
-    // 每100ms产生新粒子
-    if(current_time - last_particle > 100) {
-        for(int i = 0; i < MAX_PARTICLES; i++) {
-            if(!particles[i].active) {
-                // 使用(rand() % 21 - 10)确保范围正好是-10到10
-                particles[i].x = SCREEN_WIDTH/2 + (rand() % 21 - 10);
-                particles[i].y = SCREEN_HEIGHT/2 + (rand() % 21 - 10);
-                particles[i].dx = (rand() % 3 - 1);
-                particles[i].dy = (rand() % 3 - 1);
-                particles[i].active = 1;
-                break;
-            }
-        }
-        last_particle = current_time;
-    }
-    
-    // 更新粒子位置
-    for(int i = 0; i < MAX_PARTICLES; i++) {
-        if(particles[i].active) {
-            particles[i].x += particles[i].dx;
-            particles[i].y += particles[i].dy;
-            
-            // 超出边界
-            if(particles[i].x < 0 || particles[i].x >= SCREEN_WIDTH ||
-               particles[i].y < 0 || particles[i].y >= SCREEN_HEIGHT) {
-                particles[i].active = 0;
-            } else {
-                OLED_DrawPoint(particles[i].x, particles[i].y);
-            }
-        }
-    }
-    
-    oled_update_needed = 1; // 粒子效果更新后需要刷新屏幕
-}
-
-/**
- * @brief 显示3D模型（使用线而不是点）
- */
-static void display_3d_model(void) {
-    // 立方体的顶点（移到函数内部，只在函数中使用）
-    static const Vertex cube_vertices[] = {
-        {-10, -10, -10, 0},  // 0: 左下前
-        {10, -10, -10, 0},   // 1: 右下前
-        {10, 10, -10, 0},    // 2: 右上前
-        {-10, 10, -10, 0},   // 3: 左上前
-        {-10, -10, 10, 0},   // 4: 左下后
-        {10, -10, 10, 0},    // 5: 右下后
-        {10, 10, 10, 0},     // 6: 右上后
-        {-10, 10, 10, 0}     // 7: 左上后
-    };
-    
-    // 使用线绘制立方体
-    // 前面
-    int x1, y1, x2, y2;
-    
-    // 立方体中心点平移到屏幕中心
-    const int center_x = 64;
-    const int center_y = 32;
-    
-    // 前面
-    x1 = cube_vertices[0].x + center_x; y1 = cube_vertices[0].y + center_y;
-    x2 = cube_vertices[1].x + center_x; y2 = cube_vertices[1].y + center_y;
-    OLED_DrawLine(x1, y1, x2, y2);
-    
-    x1 = cube_vertices[1].x + center_x; y1 = cube_vertices[1].y + center_y;
-    x2 = cube_vertices[2].x + center_x; y2 = cube_vertices[2].y + center_y;
-    OLED_DrawLine(x1, y1, x2, y2);
-    
-    x1 = cube_vertices[2].x + center_x; y1 = cube_vertices[2].y + center_y;
-    x2 = cube_vertices[3].x + center_x; y2 = cube_vertices[3].y + center_y;
-    OLED_DrawLine(x1, y1, x2, y2);
-    
-    x1 = cube_vertices[3].x + center_x; y1 = cube_vertices[3].y + center_y;
-    x2 = cube_vertices[0].x + center_x; y2 = cube_vertices[0].y + center_y;
-    OLED_DrawLine(x1, y1, x2, y2);
-    
-    // 后面
-    x1 = cube_vertices[4].x + center_x; y1 = cube_vertices[4].y + center_y;
-    x2 = cube_vertices[5].x + center_x; y2 = cube_vertices[5].y + center_y;
-    OLED_DrawLine(x1, y1, x2, y2);
-    
-    x1 = cube_vertices[5].x + center_x; y1 = cube_vertices[5].y + center_y;
-    x2 = cube_vertices[6].x + center_x; y2 = cube_vertices[6].y + center_y;
-    OLED_DrawLine(x1, y1, x2, y2);
-    
-    x1 = cube_vertices[6].x + center_x; y1 = cube_vertices[6].y + center_y;
-    x2 = cube_vertices[7].x + center_x; y2 = cube_vertices[7].y + center_y;
-    OLED_DrawLine(x1, y1, x2, y2);
-    
-    x1 = cube_vertices[7].x + center_x; y1 = cube_vertices[7].y + center_y;
-    x2 = cube_vertices[4].x + center_x; y2 = cube_vertices[4].y + center_y;
-    OLED_DrawLine(x1, y1, x2, y2);
-    
-    // 连接前后面
-    x1 = cube_vertices[0].x + center_x; y1 = cube_vertices[0].y + center_y;
-    x2 = cube_vertices[4].x + center_x; y2 = cube_vertices[4].y + center_y;
-    OLED_DrawLine(x1, y1, x2, y2);
-    
-    x1 = cube_vertices[1].x + center_x; y1 = cube_vertices[1].y + center_y;
-    x2 = cube_vertices[5].x + center_x; y2 = cube_vertices[5].y + center_y;
-    OLED_DrawLine(x1, y1, x2, y2);
-    
-    x1 = cube_vertices[2].x + center_x; y1 = cube_vertices[2].y + center_y;
-    x2 = cube_vertices[6].x + center_x; y2 = cube_vertices[6].y + center_y;
-    OLED_DrawLine(x1, y1, x2, y2);
-    
-    x1 = cube_vertices[3].x + center_x; y1 = cube_vertices[3].y + center_y;
-    x2 = cube_vertices[7].x + center_x; y2 = cube_vertices[7].y + center_y;
-    OLED_DrawLine(x1, y1, x2, y2);
-    
-    oled_update_needed = 1; // 标记需要更新显示
-}
-
-/**
- * @brief 显示压力条形图
- */
-static void display_pressure_bars(void) {
-    int i;
-    char buf[32];
-    for(i = 0; i < 6; i++) {
-        int bar_height = (int)(g_process_params.pressure[i] * 20.0f);
-        // 显示压力条
-        OLED_DrawLine(10 + i*20, 63-bar_height, 10 + i*20, 63);
-        OLED_DrawLine(10 + i*20, 63, 25 + i*20, 63);
-        OLED_DrawLine(25 + i*20, 63, 25 + i*20, 63-bar_height);
-        OLED_DrawLine(10 + i*20, 63-bar_height, 25 + i*20, 63-bar_height);
-        
-        // 显示压力值
-        snprintf(buf, sizeof(buf), "%.1f", g_process_params.pressure[i]);
-        OLED_ShowString(8 + i*20, 52, buf, 12);
-    }
-}
-
-/**
- * @brief 显示温度计
- */
-static void display_temperature(void) {
-    const uint8_t x = SCREEN_WIDTH - 20;
-    const uint8_t y = 10;
-    const uint8_t height = 40;
-    
-    // 温度计
-    OLED_DrawLine(x, y, x+10, y);
-    OLED_DrawLine(x, y, x, y+height);
-    OLED_DrawLine(x+10, y, x+10, y+height);
-    OLED_DrawLine(x, y+height, x+10, y+height);
-    
-    // 温度液 - 确保线性关系
-    uint8_t temp_height = (uint8_t)(((float)g_process_params.temperature / MAX_TEMPERATURE) * height);
-    for(uint8_t i = 0; i < temp_height; i++) {
-        OLED_DrawLine(x+2, y+height-i, x+8, y+height-i);
-    }
-    
-    // 显示温度值
-    OLED_Printf(x-30, y, OLED_8X16, "%.1fC", g_process_params.temperature);
-}
-
-/**
- * @brief 显示进度条
- */
-static void display_progress(void) {
-    const uint8_t progress_width = 100;
-    const uint8_t y = SCREEN_HEIGHT - 10;
-    
-    // 显示进度条
-    OLED_DrawLine(14, y-8, 114, y-8);
-    OLED_DrawLine(14, y, 114, y);
-    OLED_DrawLine(14, y-8, 14, y);
-    OLED_DrawLine(114, y-8, 114, y);
-    
-    // 进度 - 确保线性关系
-    uint8_t fill_width = (uint8_t)(((float)g_process_params.progress / 100.0f) * progress_width);
-    for(uint8_t i = 0; i < fill_width; i++) {
-        OLED_DrawLine(14+i, y-7, 14+i, y-1);
-    }
-    
-    // 显示百分比 - 显示小数
-    OLED_Printf(70, y-7, OLED_8X16, "%.1f%%", g_process_params.progress);
-}
-
-/**
- * @brief 显示状态警告效果
- */
-#if 0
-static void show_warning_effect(void) {
-    // 实现状态警告效果的代码
-    // 暂时延迟，实际可以实现警告效果显示
-}
-#endif
 
 /**
  * @brief  主菜单入口
@@ -303,6 +88,7 @@ static void show_warning_effect(void) {
 int menu1(void)
 {
     uint8_t select = 0;
+    
     // 在函数内部定义菜单项
     static const MenuItem items[] = {
         {"工艺监控", menu_process},
@@ -310,13 +96,6 @@ int menu1(void)
         {"历史记录", menu_history}
     };
     uint8_t count = sizeof(items) / sizeof(items[0]);
-    
-    // 初始化粒子效果 - 只在主菜单需要调用一次
-    static uint8_t particles_initialized = 0;
-    if (!particles_initialized) {
-        init_particles();
-        particles_initialized = 1;
-    }
     
     // 首次进入时标记需要更新
     oled_update_needed = 1;
@@ -352,150 +131,6 @@ int menu1(void)
     }
 }
 
-/**
- * @brief  压力设置菜单入口
- * @retval int 返回值说明
- */
-int menu3_PressureSet(void)
-{
-    float pressure = Get_Pressure();
-    uint8_t select = 0;
-    
-    while(1)
-    {
-        KeyNum = Key_GetNum();
-        
-        switch(KeyNum)
-        {
-            case 1: // 上
-                pressure += (select == 0) ? 1.0f : 0.1f;
-                if(pressure > MAX_PRESSURE) pressure = MAX_PRESSURE;
-                break;
-                
-            case 2: // 下
-                pressure -= (select == 0) ? 1.0f : 0.1f;
-                if(pressure < 0) pressure = 0;
-                break;
-                
-            case 3: // 切换单位
-                select = !select;
-                break;
-                
-            case 4: // 返回
-                return 0; // 直接返回0，不调用上一级函数
-                
-            case 5: // 确认设置
-                if(Set_Pressure(pressure) == PRESSURE_OK) {
-                    return 0; // 直接返回0，不调用上一级函数
-                }
-                break;
-        }
-        
-        OLED_Clear();
-        OLED_ShowString(0, 0, "设置压力:", OLED_8X16);
-        OLED_Printf(0, 16, OLED_8X16, "%.1f GPa", pressure);
-        OLED_ShowString(0, 32, select ? "高精度" : "低精度", OLED_8X16);
-        OLED_Update(); // 每次参数变化后直接更新显示
-    }
-}
-
-/**
- * @brief  温度设置菜单入口
- * @retval int 返回值说明
- */
-int menu3_TemperatureSet(void)
-{
-    float temperature = Get_Temperature();
-    uint8_t select = 0;
-    
-    while(1)
-    {
-        KeyNum = Key_GetNum();
-        
-        switch(KeyNum)
-        {
-            case 1: // 上
-                temperature += (select == 0) ? 10.0f : 1.0f;
-                if(temperature > MAX_TEMPERATURE) temperature = MAX_TEMPERATURE;
-                break;
-                
-            case 2: // 下
-                temperature -= (select == 0) ? 10.0f : 1.0f;
-                if(temperature < 0) temperature = 0;
-                break;
-                
-            case 3: // 切换单位
-                select = !select;
-                break;
-                
-            case 4: // 返回
-                return 0; // 直接返回0，不调用上一级函数
-                
-            case 5: // 确认设置
-                if(Set_Temperature(temperature) == TEMP_OK) {
-                    return 0; // 直接返回0，不调用上一级函数
-                }
-                break;
-        }
-        
-        OLED_Clear();
-        OLED_ShowString(0, 0, "设置温度:", OLED_8X16);
-        OLED_Printf(0, 16, OLED_8X16, "%.1f C", temperature);
-        OLED_ShowString(0, 32, select ? "高精度" : "低精度", OLED_8X16);
-        OLED_Update(); // 每次参数变化后直接更新显示
-    }
-}
-
-/**
- * @brief  时间设置菜单入口
- * @retval int 返回值说明
- */
-int menu3_TimeSet(void)
-{
-    uint8_t hours = 0, minutes = 0;
-    uint8_t select = 0; // 0:hours, 1:minutes
-    
-    while(1)
-    {
-        KeyNum = Key_GetNum();
-        
-        switch(KeyNum)
-        {
-            case 1: // 上
-                if(select == 0) {
-                    hours = (hours + 1) % 24;
-                } else {
-                    minutes = (minutes + 1) % 60;
-                }
-                break;
-                
-            case 2: // 下
-                if(select == 0) {
-                    hours = (hours > 0) ? (hours - 1) : 23;
-                } else {
-                    minutes = (minutes > 0) ? (minutes - 1) : 59;
-                }
-                break;
-                
-            case 3: // 切换单位
-                select = !select;
-                break;
-                
-            case 4: // 返回
-                return 0; // 直接返回0，不调用上一级函数
-                
-            case 5: // 确认设置
-                // 时间设置的逻辑实现
-                return 0; // 直接返回0，不调用上一级函数
-        }
-        
-        OLED_Clear();
-        OLED_ShowString(0, 0, "设置时间:", OLED_8X16);
-        OLED_Printf(0, 16, OLED_8X16, "%02d:%02d", hours, minutes);
-        OLED_ShowString(0, 32, select ? "设置分钟" : "设置小时", OLED_8X16);
-        OLED_Update(); // 每次参数变化后直接更新显示
-    }
-}
 
 /**
  * @brief  工艺过程界面 - 启动和监控工艺全流程
@@ -503,27 +138,25 @@ int menu3_TimeSet(void)
  */
 int menu_process(void)
 {
-    // 工艺阶段定义
-    typedef enum {
-        STAGE_READY,     // 准备阶段
-        STAGE_CALIBRATION, // 校准阶段
-        STAGE_PRESS_FAST, // 一次加压阶段（快速加压）
-        STAGE_PRESS_PRECISE, // 二次加压阶段（精确加压）
-        STAGE_HEAT,      // 加热阶段
-        STAGE_HOLD,      // 保温保压阶段
-        STAGE_COOL,      // 冷却阶段
-        STAGE_RELEASE,   // 卸压阶段
-        STAGE_COMPLETE   // 完成阶段
-    } ProcessStage;
+    // 初始化当前工艺阶段
+    current_stage = STAGE_READY;
     
-    // 系统状态定义 - 与全局状态定义保持一致
-    ProcessStage current_stage = STAGE_READY; // 当前工艺阶段
+    // 各阶段持续时间(ms): 准备, 校准, 加压, 加热, 保压保温, 冷却, 卸压, 完成
+    // 加热、保温和冷却阶段仍然基于时间控制
+    uint32_t stage_duration[] = {0, 1000, 18000, 15000, 20000, 10000, 5000, 0}; 
     uint32_t stage_start_time = 0;
-    // 各阶段持续时间(ms): 准备, 校准, 一次加压, 二次加压, 加热, 保压保温, 冷却, 卸压, 完成
-    uint32_t stage_duration[] = {0, 1000, 8000, 10000, 15000, 20000, 10000, 5000, 0}; 
-    float target_temperature = 200.0f; // 目标温度
-    float target_pressure = 5.0f;      // 目标压力
-    float current_temperature = 25.0f;  // 当前温度
+    uint32_t current_time = 0;
+    uint32_t elapsed_time = 0;
+    uint32_t current_steps = 0;
+    
+    // 初始化电机目标步数数组
+    for(uint8_t i = 0; i < MOTOR_NUM; i++) {
+        motors[i].target_steps = 0; // 默认不限制步数
+    }
+    
+    float target_temperature = DEFAULT_TARGET_TEMPERATURE; // 目标温度
+    float target_pressure = DEFAULT_TARGET_PRESSURE;      // 目标压力
+    float current_temperature = DEFAULT_INITIAL_TEMPERATURE;  // 当前温度
     float current_pressure = 0.0f;      // 当前压力
     uint8_t motors_running = 0;         // 电机运行状态
     uint8_t process_confirmed = 0;      // 工艺确认标志
@@ -559,21 +192,31 @@ int menu_process(void)
                     // 正式启动工艺流程，首先进入校准阶段
                     current_stage = STAGE_CALIBRATION;
                     stage_start_time = HAL_GetTick();
-                    g_sys_params.state = PROCESS_HEATING; // 更新系统状态
                     
                     // 重置LED状态，确保干净开始
                     reset_led_state();
                     
-                    // 启动TIM5定时器，用于LED PWM控制
-                    HAL_TIM_Base_Start_IT(&htim5);
+                    // 不用启动TIM5定时器，用于LED PWM控制,因为它已经在main里面开启了,用于按键扫描
                     g_led_enabled = 1; // 启用LED
                     
                     // 启动所有电机，设置为反向旋转进行校准
                     for(uint8_t i = 0; i < 3; i++) {
                         Motor_SetDir(i, DIR_CCW);    // 设置方向为逆时针（反方向）
-                        Motor_SetSpeed(i, 100);      // 设置校准速度
+                        Motor_SetSpeed(i, CALIBRATION_SPEED);      // 设置校准速度
+                        
+                        // 获取当前步数作为初始值，用于计算校准进度
+                        uint32_t initial_steps = Motor_GetStepCount(i);
+                        
+                        // 设置目标步数为0，表示需要减少到0
+                        motors[i].target_steps = 0;
+                        motors[i].step_control_enabled = 1; // 启用中断监控
+                        
                         Motor_Run(i);                // 启动电机
                     }
+                    
+                    // 保存初始步数用于计算进度
+                    initial_calibration_steps = Motor_GetStepCount(0);
+                    
                     motors_running = 1;
                     
                     // 更新进度条初始值
@@ -606,7 +249,13 @@ int menu_process(void)
                     Motor_EmergencyStop();
                     motors_running = 0;
                     
-                    // 完全重置LED状态
+                    // 重置所有电机的步数监控标志位
+                    for(uint8_t i = 0; i < MOTOR_NUM; i++) {
+                        motors[i].step_control_enabled = 0;
+                        motors[i].target_steps = 0;
+                    }
+                    
+                    // 重置LED状态
                     reset_led_state();
                     
                     // 显示停止信息
@@ -618,7 +267,6 @@ int menu_process(void)
                     
                     // 返回准备状态
                     current_stage = STAGE_READY;
-                    g_sys_params.state = PROCESS_IDLE;
                     process_confirmed = 0;
                     oled_update_needed = 1;
                 }
@@ -627,88 +275,81 @@ int menu_process(void)
         
         // 根据当前工艺阶段执行相应的逻辑
         if(motors_running) {
-            uint32_t current_time = HAL_GetTick();
-            uint32_t elapsed_time = current_time - stage_start_time;
+            current_time = HAL_GetTick();
+            elapsed_time = current_time - stage_start_time;
             
-            // 阶段转换逻辑
+            // 获取当前电机步数
+            current_steps = Motor_GetStepCount(0); // 以0号电机为参考
+            
+            // 计算进度 - 在界面渲染前先更新工艺进度
             switch(current_stage) {
                 case STAGE_CALIBRATION:
-                    // 校准阶段 - 电机反向旋转1秒回到原点
-                    // 更新进度
-                    g_process_params.progress = (float)elapsed_time / stage_duration[STAGE_CALIBRATION] * 10.0f;
+                    // 校准阶段 - 所有电机反转回到原点
+                    // 使用初始步数和当前步数计算进度
                     
-                    // 校准时间结束，进入一次加压阶段
-                    if(elapsed_time >= stage_duration[STAGE_CALIBRATION]) {
+                    // 进度计算方式：当步数从初始值减少到0时，进度从0增加到100%
+                    if(initial_calibration_steps > 0) {
+                        // 计算已完成的百分比
+                        float completed_pct = 1.0f - (float)current_steps / (float)initial_calibration_steps;
+                        if(completed_pct < 0.0f) completed_pct = 0.0f;
+                        if(completed_pct > 1.0f) completed_pct = 1.0f;
+                        
+                        // 进度从0%到10%（在整个工艺中的比例）
+                        g_process_params.progress = completed_pct * 10.0f;
+                    }
+                    
+                    // 基于步数判断校准是否完成，进入加压阶段
+                    // 电机停止逻辑已移到TIM中断处理，这里只检查是否已停止并自动启动下一阶段
+                    if(motors[0].state != MOTOR_RUNNING) {
+                        // 自动进入加压阶段
                         current_stage = STAGE_PRESS_FAST;
                         stage_start_time = current_time;
-                        g_sys_params.state = PROCESS_PRESSING;
                         
-                        // 校准完成，调整电机方向和速度为快速加压
+                        // 校准完成，所有电机设置为正向中速旋转进行加压
                         for(uint8_t i = 0; i < 3; i++) {
                             Motor_SetDir(i, DIR_CW);     // 设置方向为顺时针
-                            Motor_SetSpeed(i, 500);      // 设置为高速
+                            Motor_SetSpeed(i, NORMAL_SPEED);      // 设置中速，平衡速度和精度
+                            
+                            // 使用校准后保存的步数进行加压
+                            motors[i].target_steps = Motor_GetStepCount(i) + calibrated_steps[i];
+                            motors[i].step_control_enabled = 1; // 启用中断监控
+                            
                             Motor_Run(i);                // 启动电机
                         }
                     }
                     break;
-                    
+                
                 case STAGE_PRESS_FAST:
-                    // 一次加压阶段 - 快速提升压力
-                    // 模拟压力上升 (达到目标压力的70%)
-                    current_pressure = 0.0f + (target_pressure * 0.7f) * 
-                                      ((float)elapsed_time / stage_duration[STAGE_PRESS_FAST]);
+                    // 加压阶段 - 提升压力至目标值
+                    // 模拟压力上升
+                    current_pressure = target_pressure * ((float)current_steps / (motors[0].target_steps));
                     
                     // 更新进度
-                    g_process_params.progress = 10.0f + 
-                                              (float)elapsed_time / stage_duration[STAGE_PRESS_FAST] * 15.0f;
+                    g_process_params.progress = 10.0f + (float)current_steps / (motors[0].target_steps) * 25.0f;
                     
-                    // 阶段时间到，或者压力达到目标值的70%，进入二次加压阶段
-                    if(elapsed_time >= stage_duration[STAGE_PRESS_FAST] || 
-                       current_pressure >= target_pressure * 0.7f) {
-                        current_stage = STAGE_PRESS_PRECISE;
-                        stage_start_time = current_time;
-                        
-                        // 调整电机速度为低速，提高精度
-                        for(uint8_t i = 0; i < 3; i++) {
-                            Motor_SetSpeed(i, 100); // 降低速度，提高精度
-                        }
-                    }
-                    break;
-                    
-                case STAGE_PRESS_PRECISE:
-                    // 二次加压阶段 - 精确加压到目标值
-                    // 模拟精确加压
-                    current_pressure = target_pressure * 0.7f + (target_pressure * 0.3f) * 
-                                      ((float)elapsed_time / stage_duration[STAGE_PRESS_PRECISE]);
-                    
-                    // 更新进度
-                    g_process_params.progress = 25.0f + 
-                                              (float)elapsed_time / stage_duration[STAGE_PRESS_PRECISE] * 10.0f;
-                    
-                    // 阶段时间到，或者压力达到目标值，进入加热阶段
-                    if(elapsed_time >= stage_duration[STAGE_PRESS_PRECISE] || 
-                       current_pressure >= target_pressure) {
+                    // 基于步数判断加压是否完成，进入加热阶段
+                    // 电机停止逻辑已移到TIM中断处理，这里只检查是否已停止并自动启动下一阶段
+                    if(motors[0].state != MOTOR_RUNNING) {
+                        // 自动进入加热阶段
                         current_stage = STAGE_HEAT;
                         stage_start_time = current_time;
-                        g_sys_params.state = PROCESS_HEATING;
-                        
-                        // 停止所有电机，在加热、保温和冷却阶段保持压力不需要电机运行
-                        Motor_EmergencyStop();
-                        // 保持motors_running为1，表示工艺仍在进行中
+
+                        // 更新LED状态以显示温度变化
+                        g_led_enabled = 1;
                     }
                     break;
                     
                 case STAGE_HEAT:
                     // 加热阶段 - 温度上升，保持压力
-                    // 模拟温度上升
-                    current_temperature = 25.0f + (target_temperature - 25.0f) * 
+                    // 模拟温度上升（仍基于时间）
+                    current_temperature = DEFAULT_INITIAL_TEMPERATURE + (target_temperature - DEFAULT_INITIAL_TEMPERATURE) * 
                                          ((float)elapsed_time / stage_duration[STAGE_HEAT]);
                     
                     // 保持压力
                     current_pressure = target_pressure;
                     
                     // 根据温度更新LED亮度
-                    update_temperature_led(current_temperature, target_temperature, 25.0f);
+                    update_temperature_led(current_temperature, target_temperature, DEFAULT_INITIAL_TEMPERATURE);
                     
                     // 更新进度
                     g_process_params.progress = 35.0f + 
@@ -719,7 +360,7 @@ int menu_process(void)
                        current_temperature >= target_temperature) {
                         current_stage = STAGE_HOLD;
                         stage_start_time = current_time;
-                        g_sys_params.state = PROCESS_TRANSFORM;
+
                     }
                     break;
                     
@@ -729,7 +370,7 @@ int menu_process(void)
                     current_pressure = target_pressure;
                     
                     // 保持LED亮度最大
-                    update_temperature_led(current_temperature, target_temperature, 25.0f);
+                    update_temperature_led(current_temperature, target_temperature, DEFAULT_INITIAL_TEMPERATURE);
                     
                     // 更新进度
                     g_process_params.progress = 50.0f + 
@@ -739,21 +380,22 @@ int menu_process(void)
                     if(elapsed_time >= stage_duration[STAGE_HOLD]) {
                         current_stage = STAGE_COOL;
                         stage_start_time = current_time;
-                        g_sys_params.state = PROCESS_COOLING;
+
                     }
                     break;
                     
                 case STAGE_COOL:
                     // 冷却阶段 - 温度下降，保持压力
-                    // 模拟温度下降
-                    current_temperature = target_temperature - (target_temperature - 25.0f) * 
+                    // 模拟温度下降（仍基于时间）
+                    current_temperature = target_temperature - (target_temperature - DEFAULT_INITIAL_TEMPERATURE) * 
                                          ((float)elapsed_time / stage_duration[STAGE_COOL]);
                     
                     // 保持压力
                     current_pressure = target_pressure;
                     
+                    
                     // 根据温度更新LED亮度
-                    update_temperature_led(current_temperature, target_temperature, 25.0f);
+                    update_temperature_led(current_temperature, target_temperature, DEFAULT_INITIAL_TEMPERATURE);
                     
                     // 更新进度
                     g_process_params.progress = 70.0f + 
@@ -764,49 +406,77 @@ int menu_process(void)
                        current_temperature <= 30.0f) {
                         current_stage = STAGE_RELEASE;
                         stage_start_time = current_time;
-                        g_sys_params.state = PROCESS_IDLE;
+
                         
-                        // 开始卸压，重新启动电机并反转
+                        // 启动卸压，让所有电机反向旋转
                         for(uint8_t i = 0; i < 3; i++) {
                             Motor_SetDir(i, DIR_CCW);    // 设置方向为逆时针（反方向）
-                            Motor_SetSpeed(i, 300);      // 设置为中速卸压
+                            Motor_SetSpeed(i, NORMAL_SPEED);      // 设置中速卸压
+                            
+                            // 目标步数为0（减少到0）
+                            motors[i].target_steps = 0;
+                            motors[i].step_control_enabled = 1; // 启用中断监控
+                            
                             Motor_Run(i);                // 启动电机
                         }
                     }
                     break;
                     
                 case STAGE_RELEASE:
-                    // 卸压阶段 - 释放压力
-                    // 模拟压力下降
-                    current_pressure = target_pressure - target_pressure * 
-                                      ((float)elapsed_time / stage_duration[STAGE_RELEASE]);
-                    
-                    // 更新进度
-                    g_process_params.progress = 85.0f + 
-                                              (float)elapsed_time / stage_duration[STAGE_RELEASE] * 15.0f;
-                    
-                    // 阶段时间到，或者压力降到接近0，完成工艺
-                    if(elapsed_time >= stage_duration[STAGE_RELEASE] || 
-                       current_pressure <= 0.1f) {
-                        current_stage = STAGE_COMPLETE;
-                        g_sys_params.state = PROCESS_IDLE;
-                        g_process_params.progress = 100.0f;
+                    // 卸压阶段 - 松开压力
+                    // 显示实时压力下降
+                    {
+                        float release_ratio = 1.0f - ((float)current_steps / STEP_COUNT_FULL_PRESSURE);
+                        if(release_ratio < 0.0f) release_ratio = 0.0f;
+                        current_pressure = target_pressure * release_ratio;
                         
-                        // 停止所有电机
-                        Motor_EmergencyStop();
-                        motors_running = 0;
+                        // 更新进度
+                        g_process_params.progress = 85.0f + (1.0f - release_ratio) * 15.0f;
                         
-                        // 显示完成信息
-                        OLED_Clear();
-                        OLED_ShowString(0, 0, "工艺完成", OLED_8X16);
-                        OLED_ShowString(0, 16, "按任意键返回", OLED_8X16);
-                        OLED_Update();
-                        
-                        // 完全重置LED状态并停止定时器
-                        reset_led_state();
-                        HAL_TIM_Base_Stop_IT(&htim5);
-                        
-                        HAL_Delay(2000);
+                        // 判断卸压完成，进入完成阶段
+                        // 电机停止逻辑已移到TIM中断处理，这里只检查是否已停止并自动启动下一阶段
+                        if(motors[0].state != MOTOR_RUNNING) {
+                            // 自动进入完成阶段
+                            current_stage = STAGE_COMPLETE;
+                            
+                            // 完成所有工艺流程
+                            // 重置LED状态
+                            reset_led_state();
+                            
+                            // 临时禁用定时器，完成后重新启用
+                            HAL_TIM_Base_Stop_IT(&htim5);
+                            
+                            // 显示工艺完成界面
+                            OLED_Clear();
+                            OLED_ShowString(0, 0, "工艺流程完成", OLED_8X16);
+                            OLED_ShowString(0, 16, "总耗时:", OLED_8X16);
+                            uint32_t total_seconds = (HAL_GetTick() - stage_start_time) / 1000;
+                            uint32_t minutes = total_seconds / 60;
+                            uint32_t seconds = total_seconds % 60;
+                            OLED_Printf(56, 16, OLED_8X16, "%02lu:%02lu", minutes, seconds);
+                            OLED_ShowString(0, 32, "按键确认返回", OLED_8X16);
+                            OLED_Update();
+                            
+                            // 等待用户确认
+                            while(1) {
+                                KeyNum = Key_GetNum();
+                                if(KeyNum == 3 || KeyNum == 4) {
+                                    break;
+                                }
+                                HAL_Delay(50); // 短暂延时，避免过快响应
+                            }
+                            
+                            // 重新启用定时器，恢复按键扫描功能
+                            HAL_TIM_Base_Start_IT(&htim5);
+                            
+                            // 返回准备状态
+
+                            process_confirmed = 0;
+                            oled_update_needed = 1;
+                            motors_running = 0; // 确保标记电机已停止
+                            
+                            HAL_Delay(2000);
+                        }
                     }
                     break;
                     
@@ -819,7 +489,7 @@ int menu_process(void)
             g_process_params.pressure[0] = current_pressure;
         }
         
-        // 更新显示
+        // 界面显示
         if(!process_confirmed || (process_confirmed && current_stage == STAGE_READY)) {
             if(oled_update_needed) {
                 // 显示欢迎界面
@@ -832,47 +502,205 @@ int menu_process(void)
                 oled_update_needed = 0;
             }
         } else if(motors_running || current_stage == STAGE_COMPLETE) {
-            // 每次循环都重绘界面，因为工艺参数需要实时更新
+            // 每次循环都刷新界面，因为工艺参数需要实时更新
             OLED_Clear();
             
-            // 显示状态栏
-            display_status_bar();
-            
-            // 显示3D模型
-            display_3d_model();
-            
-            // 显示阶段信息
-            const char *stage_names[] = {"准备中", "校准中", "一次加压", "二次加压", 
-                                         "加热中", "保温保压", "冷却中", "卸压中", "已完成"};
-            OLED_ShowString(0, 0, (char*)stage_names[current_stage], OLED_8X16);
-            
-            // 显示压力条形图
-            display_pressure_bars();
-            
-            // 显示温度
-            display_temperature();
-            
-            // 显示进度
-            display_progress();
-            
-            // 更新粒子效果 - 仅在工艺运行时显示
-            if(motors_running) {
-                update_particle_effects();
+            // 根据不同工艺阶段显示不同的界面
+            switch(current_stage) {
+                case STAGE_CALIBRATION:
+                    // === 校准阶段界面 ===
+                    // 显示标题和状态
+                    OLED_Clear();
+                    OLED_ShowString(0, 0, "电机校准中", OLED_8X16);
+                    
+                    // 显示步数信息
+                    OLED_ShowString(0, 16, "当前步数:", OLED_8X16);
+                    OLED_Printf(70, 16, OLED_8X16, "%lu", current_steps);
+                    
+                    // 显示初始步数和目标步数
+                    OLED_ShowString(0, 32, "初始/目标:", OLED_8X16);
+                    OLED_Printf(70, 32, OLED_8X16, "%lu/0", initial_calibration_steps);
+                    
+                    // 显示进度条
+                    OLED_DrawRectangle(0, 48, 100, 8, 0);
+                    uint8_t bar_width = (uint8_t)(g_process_params.progress * 10.0f);
+                    if(bar_width > 100) bar_width = 100;
+                    for(uint8_t i = 0; i < bar_width; i++) {
+                        OLED_DrawLine(i, 49, i, 55);
+                    }
+                    // 显示进度百分比
+                    OLED_Printf(105, 48, OLED_8X16, "%d%%", (int)(g_process_params.progress * 10));
+                    break;
+                    
+                case STAGE_PRESS_FAST:
+                    // === 加压阶段界面 ===
+                    // 显示标题和状态
+                    OLED_Clear();
+                    OLED_ShowString(0, 0, "加压中", OLED_8X16);
+                    
+                    // 显示压力值
+                    OLED_ShowString(0, 16, "压力:", OLED_8X16);
+                    OLED_Printf(48, 16, OLED_8X16, "%.1f GPa", current_pressure);
+                    
+                    // 显示进度信息
+                    OLED_ShowString(0, 32, "进度:", OLED_8X16);
+                    
+                    // 显示进度条
+                    OLED_DrawRectangle(48, 32, 80, 8, 0);
+                    // 计算相对进度，使用校准过的步数
+                    float progress = (float)current_steps / calibrated_steps[0];
+                    if(progress > 1.0f) progress = 1.0f;
+                    bar_width = (uint8_t)(progress * 80);
+                    if(bar_width > 80) bar_width = 80;
+                    for(uint8_t i = 0; i < bar_width; i++) {
+                        OLED_DrawLine(48 + i, 33, 48 + i, 39);
+                    }
+                    
+                    // 显示步数信息
+                    OLED_ShowString(0, 48, "步数:", OLED_8X16);
+                    OLED_Printf(48, 48, OLED_8X16, "%lu/%lu", current_steps, calibrated_steps[0]);
+                    break;
+                    
+                case STAGE_HEAT:
+                    // === 加热阶段界面 ===
+                    // 显示标题和状态
+                    OLED_Clear();
+                    OLED_ShowString(0, 0, "加热中", OLED_8X16);
+                    
+                    // 显示温度值
+                    OLED_ShowString(0, 16, "温度:", OLED_8X16);
+                    OLED_Printf(48, 16, OLED_8X16, "%.1f C", current_temperature);
+                    
+                    // 显示目标温度
+                    OLED_ShowString(0, 32, "目标:", OLED_8X16);
+                    OLED_Printf(48, 32, OLED_8X16, "%.1f C", target_temperature);
+                    
+                    // 显示温度进度条
+                    OLED_DrawRectangle(0, 48, 100, 8, 0);
+                    bar_width = (uint8_t)(((current_temperature - DEFAULT_INITIAL_TEMPERATURE) / (target_temperature - DEFAULT_INITIAL_TEMPERATURE)) * 100);
+                    if(bar_width > 100) bar_width = 100;
+                    for(uint8_t i = 0; i < bar_width; i++) {
+                        OLED_DrawLine(i, 49, i, 55);
+                    }
+                    // 显示进度百分比
+                    OLED_Printf(105, 48, OLED_8X16, "%d%%", (int)g_process_params.progress);
+                    break;
+                    
+                case STAGE_HOLD:
+                    // === 保温保压阶段界面 ===
+                    // 显示标题和状态
+                    OLED_Clear();
+                    OLED_ShowString(0, 0, "保温保压中", OLED_8X16);
+                    
+                    // 显示温度值
+                    OLED_ShowString(0, 16, "温度:", OLED_8X16);
+                    OLED_Printf(48, 16, OLED_8X16, "%.1f C", current_temperature);
+                    
+                    // 显示压力值
+                    OLED_ShowString(0, 32, "压力:", OLED_8X16);
+                    OLED_Printf(48, 32, OLED_8X16, "%.1f GPa", current_pressure);
+                    
+                    // 显示剩余时间
+                    uint32_t remaining_time = (stage_duration[STAGE_HOLD] - elapsed_time) / 1000; // 秒
+                    OLED_ShowString(0, 48, "剩余:", OLED_8X16);
+                    OLED_Printf(48, 48, OLED_8X16, "%02lu:%02lu", remaining_time / 60, remaining_time % 60);
+                    
+                    // 显示进度百分比
+                    OLED_Printf(105, 48, OLED_8X16, "%d%%", (int)g_process_params.progress);
+                    break;
+                    
+                case STAGE_COOL:
+                    // === 冷却阶段界面 ===
+                    // 显示标题和状态
+                    OLED_Clear();
+                    OLED_ShowString(0, 0, "冷却中", OLED_8X16);
+                    
+                    // 显示温度值
+                    OLED_ShowString(0, 16, "温度:", OLED_8X16);
+                    OLED_Printf(48, 16, OLED_8X16, "%.1f C", current_temperature);
+                    
+                    // 显示目标温度
+                    OLED_ShowString(0, 32, "目标:", OLED_8X16);
+                    OLED_Printf(48, 32, OLED_8X16, "25.0 C");
+                    
+                    // 显示温度进度条
+                    OLED_DrawRectangle(0, 48, 100, 8, 0);
+                    bar_width = (uint8_t)(((current_temperature - DEFAULT_INITIAL_TEMPERATURE) / (target_temperature - DEFAULT_INITIAL_TEMPERATURE)) * 100);
+                    if(bar_width > 100) bar_width = 100;
+                    for(uint8_t i = 0; i < bar_width; i++) {
+                        OLED_DrawLine(i, 49, i, 55);
+                    }
+                    // 显示进度百分比
+                    OLED_Printf(105, 48, OLED_8X16, "%d%%", (int)g_process_params.progress);
+                    break;
+                    
+                case STAGE_RELEASE:
+                    // === 卸压阶段界面 ===
+                    // 显示标题和状态
+                    OLED_Clear();
+                    OLED_ShowString(0, 0, "卸压中", OLED_8X16);
+                    
+                    // 显示压力值
+                    OLED_ShowString(0, 16, "压力:", OLED_8X16);
+                    OLED_Printf(48, 16, OLED_8X16, "%.1f GPa", current_pressure);
+                    
+                    // 显示进度信息
+                    OLED_ShowString(0, 32, "进度:", OLED_8X16);
+                    
+                    // 显示进度条
+                    OLED_DrawRectangle(48, 32, 80, 8, 0);
+                    float release_progress = 1.0f - (float)current_steps / calibrated_steps[current_motor];
+                    if(release_progress < 0.0f) release_progress = 0.0f;
+                    if(release_progress > 1.0f) release_progress = 1.0f;
+                    bar_width = (uint8_t)(release_progress * 80);
+                    if(bar_width > 80) bar_width = 80;
+                    for(uint8_t i = 0; i < bar_width; i++) {
+                        OLED_DrawLine(48 + i, 33, 48 + i, 39);
+                    }
+                    
+                    // 显示步数信息
+                    OLED_ShowString(0, 48, "步数:", OLED_8X16);
+                    OLED_Printf(48, 48, OLED_8X16, "%lu/%lu", calibrated_steps[current_motor] - current_steps, calibrated_steps[current_motor]);
+                    break;
+                    
+                case STAGE_COMPLETE:
+                    // 完成阶段显示
+                    OLED_Clear();
+                    OLED_ShowString(0, 0, "工艺完成", OLED_8X16);
+                    OLED_ShowString(0, 16, "按键4: 返回", OLED_8X16);
+                    break;
+                    
+                default:
+                    // 其他阶段保持原有显示
+                    OLED_Clear();
+                    OLED_ShowString(0, 0, "工艺进行中", OLED_8X16);
+                    OLED_ShowString(0, 16, "请稍候...", OLED_8X16);
+                    break;
             }
             
-            // 显示电机状态
-            if(motors_running) {
-                char motor_info[20];
-                uint32_t steps = Motor_GetStepCount(0);
-                snprintf(motor_info, sizeof(motor_info), "M:%lu", steps);
-                OLED_ShowString(80, 0, motor_info, OLED_8X16);
-            }
-            
-            // 直接更新，因为此界面内容总是在变化
+            // 直接更新，因为工艺参数随时在变化
             OLED_Update();
+        }
+        
+        /* 工艺流程控制示例 - 使用加压和卸压控制功能 */
+        if(KeyNum == 1) { // 使用1代替KEY_OK，按照Key.h中可能的定义
+            // 仅在非工艺进行中或工艺完成时响应按键1
+            if(!motors_running || current_stage == STAGE_COMPLETE) {
+                // 如果在准备阶段且已确认，则启动工艺
+                if(current_stage == STAGE_READY && process_confirmed) {
+                    // 正式启动工艺流程，重新设置为校准阶段
+                    current_stage = STAGE_CALIBRATION;
+                    // 此处不执行实际的电机控制，已在上面的过程确认部分完成
+                } 
+                // 如果在完成阶段，返回主菜单
+                else if(current_stage == STAGE_COMPLETE) {
+                    return menu1(); // 修正：原先是调用不存在的menu_main()
+                }
+            }
         }
     }
 }
+
 
 /**
  * @brief  参数设置菜单入口
@@ -890,7 +718,8 @@ int menu2(void)
         {"工艺选择", menu3_ProcessSelect},
         {"数据记录", menu3_DataRecord},
         {"系统配置", menu3_SystemConfig},
-        {"系统状态", menu_motor_status}
+        {"系统状态", menu_motor_status},
+        {"电机校准", menu3_MotorCalibration}
     };
     uint8_t count = sizeof(main_menu_items) / sizeof(main_menu_items[0]);
     
@@ -930,6 +759,7 @@ int menu2(void)
         }
     }
 }
+
 
 /**
  * @brief  参数设置菜单入口
@@ -983,6 +813,7 @@ int menu_settings(void)
         }
     }
 }
+
 
 /**
  * @brief  历史记录菜单入口
@@ -1045,6 +876,155 @@ int menu_history(void)
     }
 }
 
+
+/**
+ * @brief  温度设置菜单入口
+ * @retval int 返回值说明
+ */
+int menu3_TemperatureSet(void)
+{
+    float temperature = Get_Temperature();
+    uint8_t select = 0;
+    
+    while(1)
+    {
+        KeyNum = Key_GetNum();
+        
+        switch(KeyNum)
+        {
+            case 1: // 上
+                temperature += (select == 0) ? 10.0f : 1.0f;
+                if(temperature > MAX_TEMPERATURE) temperature = MAX_TEMPERATURE;
+                break;
+                
+            case 2: // 下
+                temperature -= (select == 0) ? 10.0f : 1.0f;
+                if(temperature < 0) temperature = 0;
+                break;
+                
+            case 3: // 切换单位
+                select = !select;
+                break;
+                
+            case 4: // 返回
+                return 0; // 直接返回0，不调用上一级函数
+                
+            case 5: // 确认设置
+                if(Set_Temperature(temperature) == TEMP_OK) {
+                    return 0; // 直接返回0，不调用上一级函数
+                }
+                break;
+        }
+        
+        OLED_Clear();
+        OLED_ShowString(0, 0, "设置温度:", OLED_8X16);
+        OLED_Printf(0, 16, OLED_8X16, "%.1f C", temperature);
+        OLED_ShowString(0, 32, select ? "高精度" : "低精度", OLED_8X16);
+        OLED_Update(); // 每次参数变化后直接更新显示
+    }
+}
+
+
+/**
+ * @brief  时间设置菜单入口
+ * @retval int 返回值说明
+ */
+int menu3_TimeSet(void)
+{
+    uint8_t hours = 0, minutes = 0;
+    uint8_t select = 0; // 0:hours, 1:minutes
+    
+    while(1)
+    {
+        KeyNum = Key_GetNum();
+        
+        switch(KeyNum)
+        {
+            case 1: // 上
+                if(select == 0) {
+                    hours = (hours + 1) % 24;
+                } else {
+                    minutes = (minutes + 1) % 60;
+                }
+                break;
+                
+            case 2: // 下
+                if(select == 0) {
+                    hours = (hours > 0) ? (hours - 1) : 23;
+                } else {
+                    minutes = (minutes > 0) ? (minutes - 1) : 59;
+                }
+                break;
+                
+            case 3: // 切换单位
+                select = !select;
+                break;
+                
+            case 4: // 返回
+                return 0; // 直接返回0，不调用上一级函数
+                
+            case 5: // 确认设置
+                // 时间设置的逻辑实现
+                return 0; // 直接返回0，不调用上一级函数
+        }
+        
+        OLED_Clear();
+        OLED_ShowString(0, 0, "设置时间:", OLED_8X16);
+        OLED_Printf(0, 16, OLED_8X16, "%02d:%02d", hours, minutes);
+        OLED_ShowString(0, 32, select ? "设置分钟" : "设置小时", OLED_8X16);
+        OLED_Update(); // 每次参数变化后直接更新显示
+    }
+}
+
+
+/**
+ * @brief  压力设置菜单入口
+ * @retval int 返回值说明
+ */
+int menu3_PressureSet(void)
+{
+    float pressure = Get_Pressure();
+    uint8_t select = 0;
+    
+    while(1)
+    {
+        KeyNum = Key_GetNum();
+        
+        switch(KeyNum)
+        {
+            case 1: // 上
+                pressure += (select == 0) ? 1.0f : 0.1f;
+                if(pressure > MAX_PRESSURE) pressure = MAX_PRESSURE;
+                break;
+                
+            case 2: // 下
+                pressure -= (select == 0) ? 1.0f : 0.1f;
+                if(pressure < 0) pressure = 0;
+                break;
+                
+            case 3: // 切换单位
+                select = !select;
+                break;
+                
+            case 4: // 返回
+                return 0; // 直接返回0，不调用上一级函数
+                
+            case 5: // 确认设置
+                if(Set_Pressure(pressure) == PRESSURE_OK) {
+                    return 0; // 直接返回0，不调用上一级函数
+                }
+                break;
+        }
+        
+        OLED_Clear();
+        OLED_ShowString(0, 0, "设置压力:", OLED_8X16);
+        OLED_Printf(0, 16, OLED_8X16, "%.1f GPa", pressure);
+        OLED_ShowString(0, 32, select ? "高精度" : "低精度", OLED_8X16);
+        OLED_Update(); // 每次参数变化后直接更新显示
+    }
+}
+
+
 /**
  * @brief  工艺选择菜单入口
  * @retval int 返回值说明
@@ -1097,6 +1077,7 @@ int menu3_ProcessSelect(void)
         }
     }
 }
+
 
 /**
  * @brief  系统配置菜单入口
@@ -1151,6 +1132,7 @@ int menu3_SystemConfig(void)
     }
 }
 
+
 /**
  * @brief  数据记录菜单入口
  * @retval int 返回值说明
@@ -1169,6 +1151,7 @@ int menu3_DataRecord(void)
         if(KeyNum == 4) return 0; // 直接返回0，不调用上一级函数
     }
 }
+
 
 /**
  * @brief  工艺1参数设置
@@ -1196,6 +1179,7 @@ int menu4_Process1(void)
 	return 0;
 }
 
+
 /**
  * @brief  工艺2参数设置
  * @retval int 返回值说明
@@ -1221,6 +1205,7 @@ int menu4_Process2(void)
     HAL_Delay(1000);
 	return 0;
 }
+
 
 /**
  * @brief  工艺3参数设置
@@ -1248,6 +1233,7 @@ int menu4_Process3(void)
 	return 0;
 }
 
+
 /**
  * @brief  压力校准菜单入口
  * @retval int 返回值说明
@@ -1266,6 +1252,7 @@ int menu4_CalibrationP(void)
         if(KeyNum == 4) return 0; // 直接返回0，不调用上一级函数
     }
 }
+
 
 /**
  * @brief  温度校准菜单入口
@@ -1286,6 +1273,7 @@ int menu4_CalibrationT(void)
     }
 }
 
+
 /**
  * @brief  报警配置菜单入口
  * @retval int 返回值说明
@@ -1304,6 +1292,7 @@ int menu4_AlarmConfig(void)
         if(KeyNum == 4) return 0; // 直接返回0，不调用上一级函数
     }
 }
+
 
 /**
  * @brief  系统信息菜单入口
@@ -1325,6 +1314,7 @@ int menu4_SystemInfo(void)
         if(KeyNum == 4) return 0; // 直接返回0，不调用上一级函数
     }
 }
+
 
 /**
  * @brief  系统状态显示菜单入口
@@ -1467,124 +1457,289 @@ int menu_motor_status(void)
     }
 }
 
+
 /**
- * @brief  主菜单入口 - 向后兼容的函数
+ * @brief  电机校准菜单入口
  * @retval int 返回值说明
  */
-int menu_main(void)
+int menu3_MotorCalibration(void)
 {
-    menu1(); // 直接调用而不是返回
-    return 0; // 永远不会执行到这里
-}
-
-/**
- * @brief 显示有效数据值
- * 注：此函数未使用，暂时注释掉以消除编译警告
- */
-#if 0
-static void display_value_with_animation(float value, uint8_t x, uint8_t y) {
-    static uint8_t animation_step = 0;
-    char value_str[16];
+    typedef struct {
+        uint32_t steps_x;    // X电机步数
+        uint32_t steps_y;    // Y电机步数
+        uint32_t steps_z;    // Z电机步数
+        uint8_t motor_running; // 电机运行状态
+    } CalibrationParams;
     
-    // 根据状态选择显示效果
-    if(g_sys_params.alert == ALERT_CRITICAL) {
-        if(animation_step++ % 2) {
-            // OLED_InvertRect未实现
-            // OLED_InvertRect(x, y, x+48, y+16);
+    static CalibrationParams calib_params = {
+        .steps_x = 0,
+        .steps_y = 0,
+        .steps_z = 0,
+        .motor_running = 0
+    };
+    
+    uint8_t select = 0;      // 当前选择的电机: 0=X, 1=Y, 2=Z
+    uint8_t edit_mode = 0;   // 编辑模式: 0=选择电机, 1=粗调整, 2=精调整
+    uint8_t current_motor = 0; // 当前操作的电机ID
+    
+    // 首次进入时标记需要更新
+    oled_update_needed = 1;
+    
+    while(1)
+    {
+        // 更新当前电机步数显示
+        if (edit_mode != 0) {
+            calib_params.steps_x = Motor_GetStepCount(0);
+            calib_params.steps_y = Motor_GetStepCount(1);
+            calib_params.steps_z = Motor_GetStepCount(2);
+        }
+        
+        // 显示界面
+        OLED_Clear();
+        OLED_ShowString(0, 0, "电机校准", OLED_8X16);
+        
+        // 显示各电机步数
+        OLED_ShowString(0, 16, "X:", OLED_8X16);
+        OLED_Printf(16, 16, OLED_8X16, "%lu", calib_params.steps_x);
+        if(select == 0) OLED_ShowString(120, 16, ">", OLED_8X16);
+        
+        OLED_ShowString(0, 32, "Y:", OLED_8X16);
+        OLED_Printf(16, 32, OLED_8X16, "%lu", calib_params.steps_y);
+        if(select == 1) OLED_ShowString(120, 32, ">", OLED_8X16);
+        
+        OLED_ShowString(0, 48, "Z:", OLED_8X16);
+        OLED_Printf(16, 48, OLED_8X16, "%lu", calib_params.steps_z);
+        if(select == 2) OLED_ShowString(120, 48, ">", OLED_8X16);
+        
+        // 显示当前模式和操作提示
+        if (edit_mode == 0) {
+            OLED_ShowString(80, 0, "选择", OLED_8X16);
+            OLED_ShowString(60, 48, "5:工艺", OLED_8X16);
+        } else if (edit_mode == 1) {
+            OLED_ShowString(80, 0, "粗调", OLED_8X16);
+            OLED_ShowString(60, 48, (calib_params.motor_running) ? "键停" : "1:+/2:-", OLED_8X16);
+        } else if (edit_mode == 2) {
+            OLED_ShowString(80, 0, "精调", OLED_8X16);
+            OLED_ShowString(60, 48, "1:+1/2:-1", OLED_8X16);
+        }
+        
+        // 直接更新，因为电机步数可能在实时变化
+        OLED_Update();
+        
+        KeyNum = Key_GetNum();
+        
+        // 根据不同的模式处理按键
+        if (edit_mode == 0) { // 选择电机模式
+            switch(KeyNum)
+            {
+                case 1: // 上
+                    select = (select > 0) ? (select - 1) : 2;
+                    break;
+                    
+                case 2: // 下
+                    select = (select < 2) ? (select + 1) : 0;
+                    break;
+                    
+                case 3: // 确认选择电机
+                    current_motor = select; // 记录当前选择的电机ID
+                    edit_mode = 1; // 进入粗调模式
+                    break;
+                    
+                case 4: // 返回
+                    return 0; // 直接返回0，不调用上一级函数
+                    
+                case 5: // 跳转至工艺监控
+                    // 显示确认消息
+                    OLED_Clear();
+                    OLED_ShowString(0, 0, "正在跳转至", OLED_8X16);
+                    OLED_ShowString(0, 16, "工艺监控...", OLED_8X16);
+                    OLED_Update();
+                    HAL_Delay(1000); // 显示1秒
+                    
+                    // 直接调用工艺监控函数
+                    return menu_process();
+            }
+        } else if (edit_mode == 1) { // 粗调模式
+            switch(KeyNum)
+            {
+                case 1: // 电机前进/停止
+                    if (!calib_params.motor_running) {
+                        // 启动电机前进
+                        Motor_SetDir(current_motor, DIR_CW);
+                        Motor_SetSpeed(current_motor, CALIBRATION_SPEED);
+                        Motor_Run(current_motor);
+                        calib_params.motor_running = 1;
+                    } else {
+                        // 停止电机
+                        Motor_Stop(current_motor);
+                        calib_params.motor_running = 0;
+                    }
+                    break;
+                    
+                case 2: // 电机后退/停止
+                    if (!calib_params.motor_running) {
+                        // 启动电机后退
+                        Motor_SetDir(current_motor, DIR_CCW);
+                        Motor_SetSpeed(current_motor, CALIBRATION_SPEED);
+                        Motor_Run(current_motor);
+                        calib_params.motor_running = 1;
+                    } else {
+                        // 停止电机
+                        Motor_Stop(current_motor);
+                        calib_params.motor_running = 0;
+                    }
+                    break;
+                    
+                case 3: // 确认当前步数
+                    // 如果电机在运行，先停止
+                    if (calib_params.motor_running) {
+                        Motor_Stop(current_motor);
+                        calib_params.motor_running = 0;
+						
+                        // 将当前步数存储到校准步数数组中，而不是电机目标步数
+                        if (current_motor == 0) {
+                            calibrated_steps[current_motor] = calib_params.steps_x;
+                        } else if (current_motor == 1) {
+                            calibrated_steps[current_motor] = calib_params.steps_y;
+                        } else if (current_motor == 2) {
+                            calibrated_steps[current_motor] = calib_params.steps_z;
+                        }
+                        
+                        // 显示确认消息
+                        OLED_Clear();
+                        OLED_ShowString(0, 0, "步数已保存", OLED_8X16);
+                        OLED_ShowString(0, 16, "用于加压校准", OLED_8X16);
+                        OLED_Printf(0, 32, OLED_8X16, "电机%d: %lu步", current_motor+1, 
+                                  calibrated_steps[current_motor]);
+                        OLED_Update();
+                        HAL_Delay(1000); // 显示1秒
+                        
+						// 返回电机选择模式
+						edit_mode = 0;
+						break;
+                    }
+                    
+                    // 如果电机不在运行，转到精调模式
+                    edit_mode = 2;
+                    break;
+                    
+                case 4: // 切换到精调模式
+                    // 如果电机在运行，先停止
+                    if (calib_params.motor_running) {
+                        Motor_Stop(current_motor);
+                        calib_params.motor_running = 0;
+                    }
+                    edit_mode = 2; // 进入精调模式
+                    break;
+                    
+                case 5: // 归零（零度校准）
+                    // 如果电机在运行，先停止
+                    if (calib_params.motor_running) {
+                        Motor_Stop(current_motor);
+                        calib_params.motor_running = 0;
+                    }
+                    
+                    // 初始化电机步数
+                    Motor_InitAll(); // 重新初始化电机状态和步数
+                    
+                    // 更新当前步数显示
+                    calib_params.steps_x = Motor_GetStepCount(0);
+                    calib_params.steps_y = Motor_GetStepCount(1);
+                    calib_params.steps_z = Motor_GetStepCount(2);
+                    break;
+            }
+        } else if (edit_mode == 2) { // 精调模式
+            switch(KeyNum)
+            {
+                case 1: // 步数+1 - 不实际运行电机，只修改步数
+                    // 获取当前步数并直接修改
+                    if (current_motor == 0) {
+                        calib_params.steps_x++;
+                    } else if (current_motor == 1) {
+                        calib_params.steps_y++;
+                    } else if (current_motor == 2) {
+                        calib_params.steps_z++;
+                    }
+                    break;
+                    
+                case 2: // 步数-1 - 不实际运行电机，只修改步数
+                    // 获取当前步数并直接修改，确保不小于0
+                    if (current_motor == 0 && calib_params.steps_x > 0) {
+                        calib_params.steps_x--;
+                    } else if (current_motor == 1 && calib_params.steps_y > 0) {
+                        calib_params.steps_y--;
+                    } else if (current_motor == 2 && calib_params.steps_z > 0) {
+                        calib_params.steps_z--;
+                    }
+                    break;
+                    
+                case 3: // 确认当前步数
+                    // 返回电机选择模式
+                    
+                    // 将当前步数存储到校准步数数组中，而不是电机目标步数
+                    if (current_motor == 0) {
+                        calibrated_steps[current_motor] = calib_params.steps_x;
+                    } else if (current_motor == 1) {
+                        calibrated_steps[current_motor] = calib_params.steps_y;
+                    } else if (current_motor == 2) {
+                        calibrated_steps[current_motor] = calib_params.steps_z;
+                    }
+                    
+                    // 显示确认消息
+                    OLED_Clear();
+                    OLED_ShowString(0, 0, "步数已保存", OLED_8X16);
+                    OLED_ShowString(0, 16, "用于加压校准", OLED_8X16);
+                    OLED_Printf(0, 32, OLED_8X16, "电机%d: %lu步", current_motor+1, 
+                              calibrated_steps[current_motor]);
+                    OLED_Update();
+                    HAL_Delay(1500); // 显示1.5秒
+                    
+                    edit_mode = 0;
+                    break;
+                    
+                case 4: // 返回粗调模式
+                    edit_mode = 1;
+                    break;
+                    
+                case 5: // 归零（零度校准）
+                    // 初始化电机步数
+                    Motor_InitAll(); // 重新初始化电机状态和步数
+                    
+                    // 更新当前步数显示
+                    calib_params.steps_x = Motor_GetStepCount(0);
+                    calib_params.steps_y = Motor_GetStepCount(1);
+                    calib_params.steps_z = Motor_GetStepCount(2);
+                    break;
+            }
         }
     }
-    
-    snprintf(value_str, sizeof(value_str), "%.1f", value);
-    OLED_ShowString(x, y, value_str, OLED_8X16);
 }
-#endif
 
-/**
- * @brief 更新系统状态
- * 注：此函数未使用，暂时注释掉以消除编译警告
- */
-#if 0
-static void update_system_state(void) {
-    static uint32_t last_check = 0;
-    uint32_t current_time = HAL_GetTick();
-    
-    if(current_time - last_check >= REFRESH_RATE_MS) {
-        // 读取压力和温度
-        g_sys_params.pressure = Get_Pressure();
-        g_sys_params.temperature = Get_Temperature();
-        
-        // 状态判断
-        if(g_sys_params.pressure > MAX_PRESSURE * 0.9f) {
-            g_sys_params.alert = ALERT_CRITICAL;
-            g_sys_params.alert_count++;
-            show_warning_effect();
-        } else if(g_sys_params.pressure > MAX_PRESSURE * 0.8f) {
-            g_sys_params.alert = ALERT_WARNING;
-        } else {
-            g_sys_params.alert = ALERT_NONE;
-        }
-        
-        // 新状态 - 电机状态
-        Motor_State status0 = Motor_GetState(0);
-        Motor_State status1 = Motor_GetState(1);
-        Motor_State status2 = Motor_GetState(2);
-        
-        // 如果有一个状态为MOTOR_ERROR则系统状态为错误
-        if(status0 == MOTOR_ERROR || status1 == MOTOR_ERROR || status2 == MOTOR_ERROR) {
-            g_sys_params.motor_status = MOTOR_ERROR;
-        }
-        // 如果有一个状态为MOTOR_RUNNING则系统状态为运行
-        else if(status0 == MOTOR_RUNNING || status1 == MOTOR_RUNNING || status2 == MOTOR_RUNNING) {
-            g_sys_params.motor_status = MOTOR_RUNNING;
-        }
-        // 系统状态为停止
-        else {
-            g_sys_params.motor_status = MOTOR_STOP;
-        }
-        
-        last_check = current_time;
-    }
-}
-#endif
-
-/**
- * @brief 切换白天/夜晚显示模式
- * 注：此函数未使用，暂时注释掉以消除编译警告
- */
-#if 0
-static void toggle_night_mode(void) {
-    static DisplayMode mode = DISPLAY_MODE_NORMAL;
-    mode = (mode == DISPLAY_MODE_NIGHT) ? DISPLAY_MODE_NORMAL : DISPLAY_MODE_NIGHT;
-    
-    // OLED对比度自动调整未实现
-    /*if(mode == DISPLAY_MODE_NIGHT) {
-        OLED_SetContrast(0x20); // 自动调低
-    } else {
-        OLED_SetContrast(0xFF); // 自动调高
-    }*/
-}
-#endif
 
 /**
  * @brief 根据温度值设置LED PWM占空比
  * @param temperature 当前温度值
  * @param target_temp 目标温度
  * @param initial_temp 初始温度
+ * @note 温度越接近目标温度，LED亮度越高
  */
 static void update_temperature_led(float temperature, float target_temp, float initial_temp) {
-    // 计算温度与目标温度的接近程度
+    // 计算温度与目标温度的接近程度(0.0-1.0)
     float progress = 0.0f;
     
     if (temperature <= initial_temp) {
+        // 低于或等于初始温度，不亮
         progress = 0.0f;
     } else if (temperature >= target_temp) {
+        // 达到或超过目标温度，最亮
         progress = 1.0f;
     } else {
+        // 按比例计算亮度
         progress = (temperature - initial_temp) / (target_temp - initial_temp);
     }
     
-    // 将进度值转换为PWM占空比(0-10)
-    g_led_pwm_duty = (uint8_t)(progress * 20.0f);
+    // 将进度值转换为PWM占空比(0-LED_PWM_MAX_COUNT)
+    g_led_pwm_duty = (uint8_t)(progress * LED_PWM_MAX_COUNT);
 }
 
 /**
@@ -1598,17 +1753,14 @@ void LED_PWM_Update(void) {
         return;
     }
     
-    // 软件PWM实现：计数器从0到20循环
+    // 软件PWM实现：计数器从0到19循环
     g_led_pwm_counter = (g_led_pwm_counter + 1) % 20;
     
     // 如果计数器小于占空比，LED亮；否则LED灭
     if (g_led_pwm_counter < g_led_pwm_duty) {
         LED_TurnOn();
-    } else if(g_led_pwm_counter < 20) {
-        LED_TurnOff();
     } else {
-        g_led_pwm_counter = 0;
-        g_led_pwm_duty = 0;
+        LED_TurnOff();
     }
 }
 
