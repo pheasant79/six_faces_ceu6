@@ -7,9 +7,6 @@
 
 #include "main.h"
 
-/* 常量定义 */
-#define MAX_PRESSURE       100.0f  // 最大压力(GPa)
-
 /**
  * @brief 压力系统状态枚举
  */

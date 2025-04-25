@@ -1,6 +1,6 @@
 /**
  * @file menu.h
- * @brief ²Ëµ¥ÏµÍ³Í·ÎÄ¼þ - ¶¨Òå²Ëµ¥½á¹¹
+ * @brief ï¿½Ëµï¿½ÏµÍ³Í·ï¿½Ä¼ï¿½ - ï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½á¹¹
  */
 #ifndef __MENU_H__
 #define __MENU_H__
@@ -17,101 +17,101 @@
 #include <math.h>
 #include <stdio.h>
 
-/* ÏµÍ³²ÎÊý¶¨Òå */
-#define REFRESH_RATE_MS    100     // Ë¢ÐÂÂÊ(ms)
-#define WARNING_BLINK_MS   300     // ¾¯¸æÉÁË¸¼ä¸ôÊ±¼ä
-#define ANIMATION_DURATION_MS 280  // ¶¯»­³ÖÐøÊ±¼äºÁÃë
-#define SCREEN_WIDTH       128     // OLEDÆÁÄ»¿í¶ÈÏñËØ
-#define SCREEN_HEIGHT      64      // OLEDÆÁÄ»¸ß¶È
+/* ÏµÍ³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
+#define REFRESH_RATE_MS    100     // Ë¢ï¿½ï¿½ï¿½ï¿½(ms)
+#define WARNING_BLINK_MS   300     // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¸ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
+#define ANIMATION_DURATION_MS 280  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½
+#define SCREEN_WIDTH       128     // OLEDï¿½ï¿½Ä»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+#define SCREEN_HEIGHT      64      // OLEDï¿½ï¿½Ä»ï¿½ß¶ï¿½
 
-/* ¹¤ÒÕ½×¶Î¶¨Òå - Ñ¹Á¦»úÄ£ÄâÊ¹ÓÃ */
+/* ï¿½ï¿½ï¿½Õ½×¶Î¶ï¿½ï¿½ï¿½ - Ñ¹ï¿½ï¿½ï¿½ï¿½Ä£ï¿½ï¿½Ê¹ï¿½ï¿½ */
 typedef enum {
-    STAGE_READY,     // ×¼±¸½×¶Î
-    STAGE_CALIBRATION, // Ð£×¼½×¶Î
-    STAGE_PRESS_FAST, // ¼ÓÑ¹½×¶Î£¨ÒÑºÏ²¢Ò»´Î¼ÓÑ¹ºÍ¶þ´Î¼ÓÑ¹£©
-    STAGE_HEAT,      // ¼ÓÈÈ½×¶Î
-    STAGE_HOLD,      // ±£ÎÂ±£Ñ¹½×¶Î
-    STAGE_COOL,      // ÀäÈ´½×¶Î
-    STAGE_RELEASE,   // Ð¶Ñ¹½×¶Î
-    STAGE_COMPLETE   // Íê³É½×¶Î
+    STAGE_READY,     // ×¼ï¿½ï¿½ï¿½×¶ï¿½
+    STAGE_CALIBRATION, // Ð£×¼ï¿½×¶ï¿½
+    STAGE_PRESS_FAST, // ï¿½ï¿½Ñ¹ï¿½×¶Î£ï¿½ï¿½ÑºÏ²ï¿½Ò»ï¿½Î¼ï¿½Ñ¹ï¿½Í¶ï¿½ï¿½Î¼ï¿½Ñ¹ï¿½ï¿½
+    STAGE_HEAT,      // ï¿½ï¿½ï¿½È½×¶ï¿½
+    STAGE_HOLD,      // ï¿½ï¿½ï¿½Â±ï¿½Ñ¹ï¿½×¶ï¿½
+    STAGE_COOL,      // ï¿½ï¿½È´ï¿½×¶ï¿½
+    STAGE_RELEASE,   // Ð¶Ñ¹ï¿½×¶ï¿½
+    STAGE_COMPLETE   // ï¿½ï¿½É½×¶ï¿½
 } ProcessStage;
 
-/* Íâ²¿ÉùÃ÷ - ÓÃÓÚÖÐ¶Ï´¦Àí */
-extern ProcessStage current_stage;     // µ±Ç°¹¤ÒÕ½×¶Î
+/* ï¿½â²¿ï¿½ï¿½ï¿½ï¿½ - ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï´ï¿½ï¿½ï¿½ */
+extern ProcessStage current_stage;     // ï¿½ï¿½Ç°ï¿½ï¿½ï¿½Õ½×¶ï¿½
 
 /**
- * @brief ÏµÍ³´¦Àí×´Ì¬Ã¶¾Ù
+ * @brief ÏµÍ³ï¿½ï¿½ï¿½ï¿½×´Ì¬Ã¶ï¿½ï¿½
  */
 typedef enum {
-    PROCESS_IDLE,       // ¿ÕÏÐ×´Ì¬
-    PROCESS_HEATING,    // ¼ÓÈÈ¹ý³ÌÖÐ
-    PROCESS_PRESSING,   // ¼ÓÑ¹¹ý³ÌÖÐ
-    PROCESS_TRANSFORM,  // ×ª»¯¹ý³ÌÖÐ
-    PROCESS_COOLING,    // ÀäÈ´¹ý³ÌÖÐ
-    PROCESS_ERROR       // ´íÎó×´Ì¬
+    PROCESS_IDLE,       // ï¿½ï¿½ï¿½ï¿½×´Ì¬
+    PROCESS_HEATING,    // ï¿½ï¿½ï¿½È¹ï¿½ï¿½ï¿½ï¿½ï¿½
+    PROCESS_PRESSING,   // ï¿½ï¿½Ñ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    PROCESS_TRANSFORM,  // ×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    PROCESS_COOLING,    // ï¿½ï¿½È´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    PROCESS_ERROR       // ï¿½ï¿½ï¿½ï¿½×´Ì¬
 } ProcessState;
 
 /**
- * @brief ÏµÍ³¸æ¾¯¼¶±ðÃ¶¾Ù
+ * @brief ÏµÍ³ï¿½æ¾¯ï¿½ï¿½ï¿½ï¿½Ã¶ï¿½ï¿½
  */
 typedef enum {
-    ALERT_NONE,         // ÎÞ¸æ¾¯
-    ALERT_WARNING,      // ¾¯¸æ
-    ALERT_CRITICAL      // ÑÏÖØ
+    ALERT_NONE,         // ï¿½Þ¸æ¾¯
+    ALERT_WARNING,      // ï¿½ï¿½ï¿½ï¿½
+    ALERT_CRITICAL      // ï¿½ï¿½ï¿½ï¿½
 } AlertLevel;
 
 /**
- * @brief ÏÔÊ¾Ä£Ê½Ã¶¾Ù
+ * @brief ï¿½ï¿½Ê¾Ä£Ê½Ã¶ï¿½ï¿½
  */
 typedef enum {
-    DISPLAY_MODE_NORMAL,    // Õý³£Ä£Ê½
-    DISPLAY_MODE_NIGHT,     // Ò¹¼äÄ£Ê½
-    DISPLAY_MODE_DEMO       // ÑÝÊ¾Ä£Ê½
+    DISPLAY_MODE_NORMAL,    // ï¿½ï¿½ï¿½ï¿½Ä£Ê½
+    DISPLAY_MODE_NIGHT,     // Ò¹ï¿½ï¿½Ä£Ê½
+    DISPLAY_MODE_DEMO       // ï¿½ï¿½Ê¾Ä£Ê½
 } DisplayMode;
 
 /**
- * @brief ¹¤ÒÕ´¦Àí²ÎÊý½á¹¹¶¨Òå
+ * @brief ï¿½ï¿½ï¿½Õ´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½á¹¹ï¿½ï¿½ï¿½ï¿½
  */
 typedef struct {
-    float pressure[6];      // ¸÷½×¶ÎÑ¹Á¦Éè¶¨Öµ
-    float temperature;      // ÎÂ¶ÈÖµ
-    float progress;         // ¹¤ÒÕ½ø¶È°Ù·Ö±È(0-100%)
-    uint32_t runtime;       // ÔËÐÐ×ÜÊ±¼ä(Ãë)
-    ProcessState state;     // ´¦Àí×´Ì¬
-    DisplayMode mode;       // ÏÔÊ¾Ä£Ê½
+    float pressure[6];      // ï¿½ï¿½ï¿½×¶ï¿½Ñ¹ï¿½ï¿½ï¿½è¶¨Öµ
+    float temperature;      // ï¿½Â¶ï¿½Öµ
+    float progress;         // ï¿½ï¿½ï¿½Õ½ï¿½ï¿½È°Ù·Ö±ï¿½(0-100%)
+    uint32_t runtime;       // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½(ï¿½ï¿½)
+    ProcessState state;     // ï¿½ï¿½ï¿½ï¿½×´Ì¬
+    DisplayMode mode;       // ï¿½ï¿½Ê¾Ä£Ê½
 } ProcessParams;
 
-/* ²Ëµ¥Ïî½á¹¹ */
+/* ï¿½Ëµï¿½ï¿½ï¿½á¹¹ */
 typedef struct {
-    const char *text;      // ²Ëµ¥ÏîÏÔÊ¾ÎÄ±¾
-    int (*handler)(void);  // ²Ëµ¥Ïî´¦Àíº¯ÊýÖ¸Õë
+    const char *text;      // ï¿½Ëµï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½Ä±ï¿½
+    int (*handler)(void);  // ï¿½Ëµï¿½ï¿½î´¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½
 } MenuItem;
 
-/* ²Ëµ¥º¯ÊýÉùÃ÷ - Ö»±£ÁôÊµ¼ÊÊ¹ÓÃµÄº¯Êý */
+/* ï¿½Ëµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ - Ö»ï¿½ï¿½ï¿½ï¿½Êµï¿½ï¿½Ê¹ï¿½ÃµÄºï¿½ï¿½ï¿½ */
 
-/* ===== Ö÷²Ëµ¥ºÍ»ù±¾µ¼º½ ===== */
-int menu1(void);             // ¿ª»ú¶¯»­ºÍÖ÷²Ëµ¥Ñ¡Ôñ£¬·µ»ØÑ¡ÔñµÄ²Ëµ¥±àºÅ
-int menu2(void);             // ¶þ¼¶²Ëµ¥£¬¸ù¾ÝÑ¡Ôñ½øÈë²»Í¬µÄ¹¦ÄÜÉèÖÃ½çÃæ
-int menu_process(void);      // ¹¤ÒÕÁ÷³Ì¼à¿Ø£¬ÏÔÊ¾µ±Ç°Éú²ú¹ý³Ì¼°3DÄ£ÐÍ
-int menu_history(void);      // ÀúÊ·¼ÇÂ¼²Ëµ¥£¬²é¿´¹ýÈ¥µÄÉú²úÊý¾ÝºÍÏµÍ³ÈÕÖ¾
+/* ===== ï¿½ï¿½ï¿½Ëµï¿½ï¿½Í»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ===== */
+int menu1(void);             // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ëµï¿½Ñ¡ï¿½ñ£¬·ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½Ä²Ëµï¿½ï¿½ï¿½ï¿½
+int menu2(void);             // ï¿½ï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½ë²»Í¬ï¿½Ä¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã½ï¿½ï¿½ï¿½
+int menu_process(void);      // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¼ï¿½Ø£ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¼ï¿½3DÄ£ï¿½ï¿½
+int menu_history(void);      // ï¿½ï¿½Ê·ï¿½ï¿½Â¼ï¿½Ëµï¿½ï¿½ï¿½ï¿½é¿´ï¿½ï¿½È¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ýºï¿½ÏµÍ³ï¿½ï¿½Ö¾
 
-/* ===== Èý¼¶²Ëµ¥º¯Êý×é ===== */
-int menu3_PressureSet(void);    // Ñ¹Á¦²ÎÊýÉèÖÃ½çÃæ
-int menu3_TemperatureSet(void); // ÎÂ¶È²ÎÊýÉèÖÃ½çÃæ
-int menu3_TimeSet(void);        // Ê±¼ä²ÎÊýÉèÖÃ½çÃæ
-int menu3_ProcessSelect(void);  // ¹¤ÒÕÑ¡Ôñ½çÃæ£¬²»Í¬¹¤ÒÕ¹ý³Ì
-int menu3_DataRecord(void);     // Êý¾Ý¼ÇÂ¼½çÃæ£¬²é¿´ÀúÊ·Éú²úÊý¾Ý
-int menu3_SystemConfig(void);   // ÏµÍ³ÅäÖÃ½çÃæ£¬¸÷ÖÖÏµÍ³²ÎÊýÉèÖÃ
-int menu_motor_status(void);    // µç»ú×´Ì¬½çÃæ£¬¿ØÖÆµç»úÔËÐÐºÍ²ÎÊýÉè¶¨
-int menu3_MotorCalibration(void); // µç»úÐ£×¼½çÃæ
+/* ===== ï¿½ï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ===== */
+int menu3_PressureSet(void);    // Ñ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã½ï¿½ï¿½ï¿½
+int menu3_TemperatureSet(void); // ï¿½Â¶È²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã½ï¿½ï¿½ï¿½
+int menu3_TimeSet(void);        // Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã½ï¿½ï¿½ï¿½
+int menu3_ProcessSelect(void);  // ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½æ£¬ï¿½ï¿½Í¬ï¿½ï¿½ï¿½Õ¹ï¿½ï¿½ï¿½
+int menu3_DataRecord(void);     // ï¿½ï¿½ï¿½Ý¼ï¿½Â¼ï¿½ï¿½ï¿½æ£¬ï¿½é¿´ï¿½ï¿½Ê·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+int menu3_SystemConfig(void);   // ÏµÍ³ï¿½ï¿½ï¿½Ã½ï¿½ï¿½æ£¬ï¿½ï¿½ï¿½ï¿½ÏµÍ³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+int menu_motor_status(void);    // ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½ï¿½æ£¬ï¿½ï¿½ï¿½Æµï¿½ï¿½ï¿½ï¿½ï¿½ÐºÍ²ï¿½ï¿½ï¿½ï¿½è¶¨
+int menu3_MotorCalibration(void); // ï¿½ï¿½ï¿½Ð£×¼ï¿½ï¿½ï¿½ï¿½
 
-/* ===== ËÄ¼¶²Ëµ¥º¯Êý×é ===== */
-int menu4_Process1(void);       // ¹¤ÒÕ1²ÎÊýÉèÖÃ
-int menu4_Process2(void);       // ¹¤ÒÕ2²ÎÊýÉèÖÃ
-int menu4_Process3(void);       // ¹¤ÒÕ3²ÎÊýÉèÖÃ
-int menu4_CalibrationP(void);   // Ñ¹Á¦´«¸ÐÆ÷Ð£×¼
-int menu4_CalibrationT(void);   // ÎÂ¶È´«¸ÐÆ÷Ð£×¼
-int menu4_AlarmConfig(void);    // ±¨¾¯ÉèÖÃ£¬°üÀ¨±¨¾¯ãÐÖµºÍ·½Ê½
-int menu4_SystemInfo(void);     // ÏµÍ³ÐÅÏ¢½çÃæ£¬ÏÔÊ¾°æ±¾µÈÐÅÏ¢
+/* ===== ï¿½Ä¼ï¿½ï¿½Ëµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ===== */
+int menu4_Process1(void);       // ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+int menu4_Process2(void);       // ï¿½ï¿½ï¿½ï¿½2ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+int menu4_Process3(void);       // ï¿½ï¿½ï¿½ï¿½3ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+int menu4_CalibrationP(void);   // Ñ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£×¼
+int menu4_CalibrationT(void);   // ï¿½Â¶È´ï¿½ï¿½ï¿½ï¿½ï¿½Ð£×¼
+int menu4_AlarmConfig(void);    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½Í·ï¿½Ê½
+int menu4_SystemInfo(void);     // ÏµÍ³ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½æ£¬ï¿½ï¿½Ê¾ï¿½æ±¾ï¿½ï¿½ï¿½ï¿½Ï¢
 
 #endif /* __MENU_H__ */
