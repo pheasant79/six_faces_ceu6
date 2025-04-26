@@ -1118,9 +1118,6 @@ int menu3_TimeSet(void)
         // 显示调整模式
         OLED_ShowString(0, 32, edit_mode ? "精调模式" : "粗调模式", OLED_8X16);
         
-        // 显示说明信息
-        OLED_ShowString(0, 48, "其他阶段时间固定", OLED_8X16);
-        
         OLED_Update();
     }
 }

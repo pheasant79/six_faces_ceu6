@@ -50,20 +50,20 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, Motor2_A_Pin|Motor2_B_Pin|Motor2_C_Pin|Motor2_D_Pin
-                          |OLED_SCL_Pin|OLED_SDA_Pin|Motor1_A_Pin|Motor1_B_Pin
-                          |Motor1_C_Pin|Motor1_D_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, Motor2_D_Pin|Motor2_C_Pin|Motor2_B_Pin|Motor2_A_Pin
+                          |OLED_SCL_Pin|OLED_SDA_Pin|Motor1_D_Pin|Motor1_C_Pin
+                          |Motor1_B_Pin|Motor1_A_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(lcd_GPIO_Port, lcd_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, Motor3_A_Pin|Motor3_B_Pin|Motor3_C_Pin|Motor3_D_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, Motor3_D_Pin|Motor3_C_Pin|Motor3_B_Pin|Motor3_A_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : Motor2_A_Pin Motor2_B_Pin Motor2_C_Pin Motor2_D_Pin
-                           Motor1_A_Pin Motor1_B_Pin Motor1_C_Pin Motor1_D_Pin */
-  GPIO_InitStruct.Pin = Motor2_A_Pin|Motor2_B_Pin|Motor2_C_Pin|Motor2_D_Pin
-                          |Motor1_A_Pin|Motor1_B_Pin|Motor1_C_Pin|Motor1_D_Pin;
+  /*Configure GPIO pins : Motor2_D_Pin Motor2_C_Pin Motor2_B_Pin Motor2_A_Pin
+                           Motor1_D_Pin Motor1_C_Pin Motor1_B_Pin Motor1_A_Pin */
+  GPIO_InitStruct.Pin = Motor2_D_Pin|Motor2_C_Pin|Motor2_B_Pin|Motor2_A_Pin
+                          |Motor1_D_Pin|Motor1_C_Pin|Motor1_B_Pin|Motor1_A_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
@@ -84,8 +84,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Motor3_A_Pin Motor3_B_Pin Motor3_C_Pin Motor3_D_Pin */
-  GPIO_InitStruct.Pin = Motor3_A_Pin|Motor3_B_Pin|Motor3_C_Pin|Motor3_D_Pin;
+  /*Configure GPIO pins : Motor3_D_Pin Motor3_C_Pin Motor3_B_Pin Motor3_A_Pin */
+  GPIO_InitStruct.Pin = Motor3_D_Pin|Motor3_C_Pin|Motor3_B_Pin|Motor3_A_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;

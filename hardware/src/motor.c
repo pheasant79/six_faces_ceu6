@@ -24,25 +24,62 @@ static Motor_Status motor_start(Motor *m);
 
 /* 电机相位表 - 使用BSRR寄存器直接设置GPIO
  * 低16位为1代表设置高电平，高16位为1代表设置低电平
+ * 8相半步进控制模式：A, AB, B, BC, C, CD, D, DA
  */
-static const uint32_t Motor_PhaseTables[3][4] = {
-    [0] = { // Motor1相位表
+static const uint32_t Motor_PhaseTables[3][8] = {
+    [0] = { // Motor1相位表 - 8相半步进
+        // A相
         Motor1_A_Pin | ((uint32_t)Motor1_B_Pin|Motor1_C_Pin|Motor1_D_Pin)<<16,
+        // A+B相
+        (Motor1_A_Pin|Motor1_B_Pin) | ((uint32_t)Motor1_C_Pin|Motor1_D_Pin)<<16,
+        // B相
         Motor1_B_Pin | ((uint32_t)Motor1_A_Pin|Motor1_C_Pin|Motor1_D_Pin)<<16,
+        // B+C相
+        (Motor1_B_Pin|Motor1_C_Pin) | ((uint32_t)Motor1_A_Pin|Motor1_D_Pin)<<16,
+        // C相
         Motor1_C_Pin | ((uint32_t)Motor1_A_Pin|Motor1_B_Pin|Motor1_D_Pin)<<16,
-        Motor1_D_Pin | ((uint32_t)Motor1_A_Pin|Motor1_B_Pin|Motor1_C_Pin)<<16
+        // C+D相
+        (Motor1_C_Pin|Motor1_D_Pin) | ((uint32_t)Motor1_A_Pin|Motor1_B_Pin)<<16,
+        // D相
+        Motor1_D_Pin | ((uint32_t)Motor1_A_Pin|Motor1_B_Pin|Motor1_C_Pin)<<16,
+        // D+A相
+        (Motor1_D_Pin|Motor1_A_Pin) | ((uint32_t)Motor1_B_Pin|Motor1_C_Pin)<<16
     },
-    [1] = { // Motor2相位表                                             
+    [1] = { // Motor2相位表 - 8相半步进                                             
+        // A相
         Motor2_A_Pin | ((uint32_t)Motor2_B_Pin|Motor2_C_Pin|Motor2_D_Pin)<<16,
+        // A+B相
+        (Motor2_A_Pin|Motor2_B_Pin) | ((uint32_t)Motor2_C_Pin|Motor2_D_Pin)<<16,
+        // B相
         Motor2_B_Pin | ((uint32_t)Motor2_A_Pin|Motor2_C_Pin|Motor2_D_Pin)<<16,
+        // B+C相
+        (Motor2_B_Pin|Motor2_C_Pin) | ((uint32_t)Motor2_A_Pin|Motor2_D_Pin)<<16,
+        // C相
         Motor2_C_Pin | ((uint32_t)Motor2_A_Pin|Motor2_B_Pin|Motor2_D_Pin)<<16,
-        Motor2_D_Pin | ((uint32_t)Motor2_A_Pin|Motor2_B_Pin|Motor2_C_Pin)<<16
+        // C+D相
+        (Motor2_C_Pin|Motor2_D_Pin) | ((uint32_t)Motor2_A_Pin|Motor2_B_Pin)<<16,
+        // D相
+        Motor2_D_Pin | ((uint32_t)Motor2_A_Pin|Motor2_B_Pin|Motor2_C_Pin)<<16,
+        // D+A相
+        (Motor2_D_Pin|Motor2_A_Pin) | ((uint32_t)Motor2_B_Pin|Motor2_C_Pin)<<16
     },
-    [2] = { // Motor3相位表
+    [2] = { // Motor3相位表 - 8相半步进
+        // A相
         Motor3_A_Pin | ((uint32_t)Motor3_B_Pin|Motor3_C_Pin|Motor3_D_Pin)<<16,
+        // A+B相
+        (Motor3_A_Pin|Motor3_B_Pin) | ((uint32_t)Motor3_C_Pin|Motor3_D_Pin)<<16,
+        // B相
         Motor3_B_Pin | ((uint32_t)Motor3_A_Pin|Motor3_C_Pin|Motor3_D_Pin)<<16,
+        // B+C相
+        (Motor3_B_Pin|Motor3_C_Pin) | ((uint32_t)Motor3_A_Pin|Motor3_D_Pin)<<16,
+        // C相
         Motor3_C_Pin | ((uint32_t)Motor3_A_Pin|Motor3_B_Pin|Motor3_D_Pin)<<16,
-        Motor3_D_Pin | ((uint32_t)Motor3_A_Pin|Motor3_B_Pin|Motor3_C_Pin)<<16
+        // C+D相
+        (Motor3_C_Pin|Motor3_D_Pin) | ((uint32_t)Motor3_A_Pin|Motor3_B_Pin)<<16,
+        // D相
+        Motor3_D_Pin | ((uint32_t)Motor3_A_Pin|Motor3_B_Pin|Motor3_C_Pin)<<16,
+        // D+A相
+        (Motor3_D_Pin|Motor3_A_Pin) | ((uint32_t)Motor3_B_Pin|Motor3_C_Pin)<<16
     }
 };
 
@@ -145,14 +182,23 @@ void motor_update_phase(Motor *m) {
     // 根据电机旋转方向更新相位索引和步数计数器
     if (m->dir == DIR_CW) {
         // 顺时针旋转，相位索引+1
-        m->phase_index = (m->phase_index + 1) % 4;
-        // 顺时针运转时，步数计数器增加1步
-        m->step_counter++;
+        m->phase_index = (m->phase_index + 1) % 8; // 修改为8相模式
+        
+        // 步数统计逻辑：每2个半步算作1个全步
+        // 半步模式下，两个半步等于一个全步，所以每2个半步增加1个步数
+        if (m->phase_index % 2 == 0) {
+            m->step_counter++;
+        }
     } else {
-        // 逆时针旋转，相位索引+3（相当于-1，避免负数处理）
-        m->phase_index = (m->phase_index + 3) % 4;
-        // 逆时针运转时，步数计数器减少1步
-        m->step_counter--;
+        // 逆时针旋转，相位索引+7（相当于-1，避免负数处理）
+        m->phase_index = (m->phase_index + 7) % 8; // 修改为8相模式
+        
+        // 步数统计逻辑：每2个半步算作1个全步
+        // 半步模式下，两个半步等于一个全步，所以每2个半步减少1个步数
+        // 增加步数下限检查，确保步数不会小于0
+        if (m->phase_index % 2 == 0 && m->step_counter > 0) {
+            m->step_counter--;
+        }
     }
 }
 
@@ -277,6 +323,8 @@ Motor_Status Motor_SetDir(uint8_t id, Motor_Dir dir) {
  * @param  id 电机ID(0-2)
  * @param  steps_per_sec 速度(步/秒)
  * @retval Motor_Status 操作结果
+ * @note   在半步进模式下，传入的steps_per_sec表示全步数/秒
+ *         系统会自动转换为半步数/秒
  */
 Motor_Status Motor_SetSpeed(uint8_t id, uint32_t steps_per_sec) {
 	//展示先不用设置速度
@@ -289,6 +337,9 @@ Motor_Status Motor_SetSpeed(uint8_t id, uint32_t steps_per_sec) {
 //    if(steps_per_sec < m->min_speed || steps_per_sec > m->max_speed)
 //        return MOTOR_ERR_SPEED_RANGE;
 //    
+//    // 半步进模式下，定时器频率需要翻倍，因为每个全步需要2个半步
+//    uint32_t halfsteps_per_sec = steps_per_sec * 2;
+//    
 //    uint32_t timer_clk = HAL_RCC_GetPCLK1Freq() * 2;
 //    uint32_t min_psc = 0;
 //    uint32_t max_psc = 0xFFFF;
@@ -298,7 +349,7 @@ Motor_Status Motor_SetSpeed(uint8_t id, uint32_t steps_per_sec) {
 //    // 二分查找最佳的分频和重装载值
 //    while(min_psc <= max_psc) {
 //        uint32_t mid_psc = (min_psc + max_psc) / 2;
-//        uint32_t calc_arr = (timer_clk / (steps_per_sec * (mid_psc + 1))) - 1;
+//        uint32_t calc_arr = (timer_clk / (halfsteps_per_sec * (mid_psc + 1))) - 1;
 //        
 //        if(calc_arr <= 0xFFFF) {
 //            best_psc = mid_psc;
@@ -334,6 +385,7 @@ Motor_Status Motor_SetSpeed(uint8_t id, uint32_t steps_per_sec) {
  * @brief  获取指定电机步数
  * @param  id 电机ID(0-2)
  * @retval int32_t 步数，使用有符号类型避免反转溢出
+ * @note   此函数返回的是全步数，半步进内部计数时每2个半步算1个全步
  */
 int32_t Motor_GetStepCount(uint8_t id) {
     return (id < MOTOR_NUM) ? motors[id].step_counter : 0;
@@ -344,6 +396,7 @@ int32_t Motor_GetStepCount(uint8_t id) {
  * @param  id 电机ID(0-2)
  * @param  steps 步数值
  * @retval Motor_Status 操作结果
+ * @note   此函数设置的是全步数，半步进内部会自动处理
  */
 Motor_Status Motor_SetStepCount(uint8_t id, int32_t steps) {
     Motor_Status status;
